@@ -4,7 +4,9 @@ import { useState } from "react";
 import styles from "./page.module.css";
 
 export default function Home() {
-  const [stage, setStage] = useState<"input" | "result">("input");
+  const [stage, setStage] = useState<
+    "input" | "box-dropped" | "box-opened" | "result"
+  >("input");
   const [dreamText, setDreamText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<{
@@ -23,6 +25,10 @@ export default function Home() {
     setError("");
 
     try {
+      // 즉시 부적함 떨어뜨리기
+      setStage("box-dropped");
+
+      // API 호출
       const response = await fetch("/api/interpret-dream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -36,21 +42,35 @@ export default function Home() {
 
       const data = await response.json();
       setAnalysisResult(data);
-      setStage("result");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "예기치 않은 오류가 발생했습니다."
       );
+      setStage("input");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBoxClick = () => {
+    if (stage === "box-dropped" && analysisResult) {
+      setStage("box-opened");
+    }
+  };
+
+  const handleReset = () => {
+    setStage("input");
+    setAnalysisResult(null);
+    setDreamText("");
+    setError("");
   };
 
   return (
     <div className={styles.layout}>
       <div className={styles.viewport}>
         <div className={styles.screen}>
-          {stage === "input" ? (
+          {/* 입력 화면 */}
+          {stage === "input" && (
             <article className={styles.card}>
               <div className={styles.hero}>
                 <h1 className={styles.title}>
@@ -83,6 +103,7 @@ export default function Home() {
                   type="button"
                   onClick={handleSubmit}
                   aria-label="꿈 입력 완료"
+                  disabled={!canSubmit}
                 >
                   {isLoading ? (
                     <span className={styles.loadingIcon}>⏳</span>
@@ -94,47 +115,72 @@ export default function Home() {
 
               {error && <div className={styles.errorMessage}>{error}</div>}
             </article>
-          ) : analysisResult ? (
+          )}
+
+          {/* 부적함 떨어진 화면 */}
+          {/* 부적함 떨어진 화면 */}
+          {stage === "box-dropped" && (
             <article className={styles.card}>
-              <div className={styles.hero}>
-                <p className={styles.summary}>{analysisResult.summary}</p>
+              <div
+                className={`${styles.boxContainer} ${styles.dropping}`}
+                onClick={handleBoxClick}
+              >
+                <div className={styles.boxBody}>
+                  {/* 부적함 배경 (임시) */}
+                  <div className={styles.boxBackground}>
+                    <div className={styles.doorLeft} />
+                    <div className={styles.doorRight} />
+                  </div>
+                </div>
               </div>
 
-              <div className={styles.analysis}>
-                {analysisResult.analysis
-                  .split("\n\n")
-                  .map(
-                    (paragraph, index) =>
-                      paragraph.trim() && <p key={index}>{paragraph.trim()}</p>
-                  )}
+              <p className={styles.hint}>
+                {isLoading ? "해몽 중..." : "부적함을 눌러주세요"}
+              </p>
+            </article>
+          )}
+
+          {/* 부적함 열린 화면 + 부적 */}
+          {/* 부적함 열린 화면 + 부적 */}
+          {stage === "box-opened" && analysisResult && (
+            <article className={styles.card}>
+              <div className={styles.boxContainer}>
+                <div className={styles.boxBody}>
+                  {/* 문 열림 */}
+                  <div className={styles.boxBackground}>
+                    <div className={`${styles.doorLeft} ${styles.open}`} />
+                    <div className={`${styles.doorRight} ${styles.open}`} />
+                  </div>
+
+                  {/* 부적 등장 */}
+                  <div className={`${styles.talisman} ${styles.show}`}>
+                    <div className={styles.talismangPaper}>
+                      <div className={styles.talismangContent}>
+                        <h3 className={styles.summary}>
+                          {analysisResult.summary}
+                        </h3>
+                        <div className={styles.analysis}>
+                          {analysisResult.analysis
+                            .split("\n\n")
+                            .map(
+                              (paragraph, index) =>
+                                paragraph.trim() && (
+                                  <p key={index}>{paragraph.trim()}</p>
+                                )
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <button
                 className={styles.back}
                 type="button"
-                onClick={() => {
-                  setStage("input");
-                  setAnalysisResult(null);
-                  setDreamText("");
-                }}
+                onClick={handleReset}
               >
                 다시 입력하기
-              </button>
-            </article>
-          ) : (
-            <article className={styles.card}>
-              <div className={styles.hero}>
-                <p className={styles.summary}>분석 중입니다...</p>
-              </div>
-              <button
-                className={styles.back}
-                type="button"
-                onClick={() => {
-                  setStage("input");
-                  setAnalysisResult(null);
-                }}
-              >
-                취소
               </button>
             </article>
           )}
