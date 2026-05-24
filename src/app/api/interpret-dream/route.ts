@@ -1,6 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { createClient } from "@supabase/supabase-js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export async function POST(request: Request) {
   try {
@@ -40,6 +44,21 @@ export async function POST(request: Request) {
     const lines = responseText.split("\n").filter((line) => line.trim());
     const summary = lines[0] || "";
     const analysisText = lines.slice(1).join("\n");
+
+    if (supabase) {
+      const { error: insertError } = await supabase.from("data").insert([
+        {
+          description: "임시 꿈 해석 결과",
+          score: 72.5,
+        },
+      ]);
+
+      if (insertError) {
+        console.error("Supabase insert error:", insertError);
+      }
+    } else {
+      console.warn("Supabase env not configured, skipping insert.");
+    }
 
     return Response.json({
       summary,
