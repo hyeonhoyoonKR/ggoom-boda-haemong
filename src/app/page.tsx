@@ -54,11 +54,13 @@ export default function Home() {
             <article className={styles.card}>
               <div className={styles.hero}>
                 <h1 className={styles.title}>
-                  당신의 꿈을<br />분석해드립니다
+                  당신의 꿈을
+                  <br />
+                  분석해드립니다
                 </h1>
                 <p className={styles.subtitle}>
-                  현대 심리학과 데이터 기반 해석을 결합해 당신의 꿈에서
-                  숨겨진 의미를 차분히 읽어냅니다.
+                  현대 심리학과 데이터 기반 해석을 결합해 당신의 꿈에서 숨겨진
+                  의미를 차분히 읽어냅니다.
                 </p>
               </div>
 
@@ -68,6 +70,12 @@ export default function Home() {
                   placeholder="당신의 꿈을 구체적으로 적어주세요."
                   value={dreamText}
                   onChange={(event) => setDreamText(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
                   disabled={isLoading}
                 />
                 <button
@@ -76,13 +84,15 @@ export default function Home() {
                   onClick={handleSubmit}
                   aria-label="꿈 입력 완료"
                 >
-                  {isLoading ? "⏳" : "→"}
+                  {isLoading ? (
+                    <span className={styles.loadingIcon}>⏳</span>
+                  ) : (
+                    "→"
+                  )}
                 </button>
               </div>
 
-              {error && (
-                <div className={styles.errorMessage}>{error}</div>
-              )}
+              {error && <div className={styles.errorMessage}>{error}</div>}
             </article>
           ) : analysisResult ? (
             <article className={styles.card}>
@@ -91,11 +101,12 @@ export default function Home() {
               </div>
 
               <div className={styles.analysis}>
-                {analysisResult.analysis.split("\n\n").map((paragraph, index) => (
-                  paragraph.trim() && (
-                    <p key={index}>{paragraph.trim()}</p>
-                  )
-                ))}
+                {analysisResult.analysis
+                  .split("\n\n")
+                  .map(
+                    (paragraph, index) =>
+                      paragraph.trim() && <p key={index}>{paragraph.trim()}</p>
+                  )}
               </div>
 
               <button
