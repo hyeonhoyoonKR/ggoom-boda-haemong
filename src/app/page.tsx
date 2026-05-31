@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -14,13 +14,16 @@ export default function Home() {
     analysis: string;
   } | null>(null);
   const [error, setError] = useState("");
+  const [isLucky, setIsLucky] = useState(true); // ✅ 추가!
+  const submitInFlightRef = useRef(false);
 
   const trimmedDream = dreamText.trim();
   const canSubmit = trimmedDream.length > 0 && !isLoading;
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!trimmedDream || isLoading || submitInFlightRef.current) return;
 
+    submitInFlightRef.current = true;
     setIsLoading(true);
     setError("");
 
@@ -42,12 +45,46 @@ export default function Home() {
 
       const data = await response.json();
       setAnalysisResult(data);
+
+      // ✅ 길몽/흉몽 판단 로직 추가
+      const luckyKeywords = [
+        "길",
+        "좋",
+        "행운",
+        "성공",
+        "기쁨",
+        "발전",
+        "희망",
+        "긍정",
+      ];
+      const unluckyKeywords = [
+        "흉",
+        "나쁨",
+        "위험",
+        "주의",
+        "경고",
+        "문제",
+        "불안",
+        "부정",
+      ];
+
+      const analysisText = `${data.summary} ${data.analysis}`.toLowerCase();
+
+      const luckScore = luckyKeywords.filter((keyword) =>
+        analysisText.includes(keyword)
+      ).length;
+      const unluckScore = unluckyKeywords.filter((keyword) =>
+        analysisText.includes(keyword)
+      ).length;
+
+      setIsLucky(luckScore >= unluckScore);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "예기치 않은 오류가 발생했습니다."
       );
       setStage("input");
     } finally {
+      submitInFlightRef.current = false;
       setIsLoading(false);
     }
   };
@@ -63,6 +100,7 @@ export default function Home() {
     setAnalysisResult(null);
     setDreamText("");
     setError("");
+    setIsLucky(true); // ✅ 리셋
   };
 
   return (
@@ -87,26 +125,32 @@ export default function Home() {
               <div className={styles.inputArea}>
                 <textarea
                   className={styles.textArea}
-                  placeholder="당신의 꿈을 구체적으로 적어주세요."
+                  placeholder="내가 꿈에서..."
                   value={dreamText}
                   onChange={(event) => setDreamText(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
+                    if (
+                      event.key === "Enter" &&
+                      !event.shiftKey &&
+                      canSubmit
+                    ) {
                       event.preventDefault();
                       handleSubmit();
                     }
                   }}
                   disabled={isLoading}
+                  aria-busy={isLoading}
                 />
                 <button
                   className={styles.submit}
                   type="button"
                   onClick={handleSubmit}
-                  aria-label="꿈 입력 완료"
+                  aria-label={isLoading ? "해몽 중" : "꿈 입력 완료"}
+                  aria-busy={isLoading}
                   disabled={!canSubmit}
                 >
                   {isLoading ? (
-                    <span className={styles.loadingIcon}>⏳</span>
+                    <span className={styles.loadingSpinner} aria-hidden="true" />
                   ) : (
                     "→"
                   )}
@@ -118,15 +162,17 @@ export default function Home() {
           )}
 
           {/* 부적함 떨어진 화면 */}
-          {/* 부적함 떨어진 화면 */}
           {stage === "box-dropped" && (
             <article className={styles.card}>
               <div
-                className={`${styles.boxContainer} ${styles.dropping}`}
+                className={`${styles.boxContainer} ${styles.dropping} ${
+                  isLoading ? styles.interpreting : ""
+                }`}
                 onClick={handleBoxClick}
+                aria-busy={isLoading}
+                aria-label={isLoading ? "해몽 중" : "부적함 열기"}
               >
                 <div className={styles.boxBody}>
-                  {/* 부적함 배경 (임시) */}
                   <div className={styles.boxBackground}>
                     <div className={styles.doorLeft} />
                     <div className={styles.doorRight} />
@@ -134,27 +180,31 @@ export default function Home() {
                 </div>
               </div>
 
-              <p className={styles.hint}>
-                {isLoading ? "해몽 중..." : "부적함을 눌러주세요"}
-              </p>
+              {!isLoading && (
+                <p className={styles.hint}>부적함을 눌러주세요</p>
+              )}
             </article>
           )}
 
-          {/* 부적함 열린 화면 + 부적 */}
           {/* 부적함 열린 화면 + 부적 */}
           {stage === "box-opened" && analysisResult && (
             <article className={styles.card}>
               <div className={styles.boxContainer}>
                 <div className={styles.boxBody}>
-                  {/* 문 열림 */}
                   <div className={styles.boxBackground}>
                     <div className={`${styles.doorLeft} ${styles.open}`} />
                     <div className={`${styles.doorRight} ${styles.open}`} />
                   </div>
 
-                  {/* 부적 등장 */}
                   <div className={`${styles.talisman} ${styles.show}`}>
-                    <div className={styles.talismangPaper}>
+                    <div
+                      className={styles.talismangPaper}
+                      style={{
+                        backgroundImage: `url('/${
+                          isLucky ? "talisman-lucky" : "talisman-unlucky"
+                        }.png')`,
+                      }}
+                    >
                       <div className={styles.talismangContent}>
                         <h3 className={styles.summary}>
                           {analysisResult.summary}

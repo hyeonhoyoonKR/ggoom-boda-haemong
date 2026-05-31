@@ -121,8 +121,28 @@
   transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
 }
 
-.submit:hover {
+.submit:hover:not(:disabled) {
   transform: translateY(-2px);
+}
+
+.submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.textArea:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.loadingSpinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(64, 63, 111, 0.2);
+  border-top-color: #403f6f;
+  border-radius: 50%;
+  animation: spin180 0.8s linear infinite;
 }
 
 .summary {
@@ -239,12 +259,14 @@
   }
 }
 
-/* 부적함 컨테이너 */
+/* 부적함 컨테이너 (기본 300×400 대비 약 20% 확대) */
 .boxContainer {
+  --box-width: 360px;
+  --box-height: 480px;
   cursor: pointer;
   position: relative;
-  width: 280px;
-  height: 380px;
+  width: var(--box-width);
+  height: var(--box-height);
   margin: 0 auto;
   transition: transform 0.3s;
 }
@@ -254,7 +276,36 @@
   animation: dropBox 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.boxContainer:hover {
+/* 해몽 대기: 부적함이 좌우로 같은 각도만큼 회전 (낙하 후 시작) */
+@keyframes boxWobble {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(4deg);
+  }
+}
+
+.boxContainer.interpreting {
+  cursor: wait;
+  pointer-events: none;
+}
+
+.boxContainer.interpreting:hover {
+  transform: none;
+}
+
+.boxContainer.interpreting .boxBody {
+  transform-origin: center 88%;
+  animation: boxWobble 1.4s ease-in-out 1.2s infinite;
+}
+
+.boxContainer:hover:not(.interpreting) {
   transform: scale(1.05);
 }
 
@@ -263,20 +314,20 @@
   position: relative;
   width: 100%;
   height: 100%;
-  perspective: 1200px;
+  perspective: 1440px;
 }
 
-/* 부적함 배경 (임시) */
+/* 부적함 배경 - gradient 제거, 투명하게 */
 .boxBackground {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: linear-gradient(145deg, #8b4513 0%, #654321 100%);
-  border: 4px solid #d4af37;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  background-image: url("/box-background.png");
+  background-size: cover;
+  background-position: center;
+  border-radius: 14px;
+  z-index: 0;
 }
-
 /* 왼쪽 문 */
 .doorLeft {
   position: absolute;
@@ -284,115 +335,118 @@
   top: 0;
   width: 50%;
   height: 100%;
-  background: linear-gradient(to right, #a0522d 0%, #8b4513 100%);
-  border-right: 2px solid #654321;
-  border-radius: 12px 0 0 12px;
+  background-image: url("/door-left.png");
+  background-size: cover;
+  background-position: center;
   transform-origin: left center;
   transition: transform 0.8s ease-out;
-  z-index: 2;
+  z-index: 3; /* 부적보다 위로 */
 }
-
-.doorLeft::before {
-  content: "門";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 48px;
-  color: #d4af37;
-  font-weight: bold;
-}
-
 .doorLeft.open {
   transform: rotateY(-130deg);
 }
 
-/* 오른쪽 문 */
+/* 오른쪽 문*/
 .doorRight {
   position: absolute;
   right: 0;
   top: 0;
   width: 50%;
   height: 100%;
-  background: linear-gradient(to left, #a0522d 0%, #8b4513 100%);
-  border-left: 2px solid #654321;
-  border-radius: 0 12px 12px 0;
+  background-image: url("/door-right.png");
+  background-size: cover;
+  background-position: center;
   transform-origin: right center;
   transition: transform 0.8s ease-out;
-  z-index: 2;
-}
-
-.doorRight::before {
-  content: "門";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 48px;
-  color: #d4af37;
-  font-weight: bold;
+  z-index: 3; /* 부적보다 위로 */
 }
 
 .doorRight.open {
   transform: rotateY(130deg);
 }
-
-/* 부적 */
+/* 부적 — 문짝과 동일한 영역(100% 높이)에 맞춤 */
 .talisman {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, 100%) scale(0.5);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateY(35%) scale(0.55);
   opacity: 0;
-  width: 220px;
-  max-height: 500px;
-  z-index: 1;
-  transition: all 1s ease-out 0.6s;
+  z-index: 1; /* 처음에는 문 아래 */
+  transition:
+    transform 1s ease-out 0.6s,
+    opacity 1s ease-out 0.6s;
 }
 
 .talisman.show {
-  transform: translate(-50%, -50%) scale(1);
+  transform: translateY(0) scale(1);
   opacity: 1;
+  z-index: 5; /* 나타날 때는 문 위로! */
 }
 
-/* 부적 종이 */
 .talismangPaper {
-  background: linear-gradient(to bottom, #ffe44d 0%, #fdd835 100%);
-  border: 3px solid #d32f2f;
-  border-radius: 8px;
-  padding: 24px 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  max-height: 450px;
-  overflow-y: auto;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-size: auto 100%;
+  background-repeat: no-repeat;
+  background-position: center top;
+  padding: 84px 42px 42px 42px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 /* 부적 내용 */
 .talismangContent {
-  color: #1a1a1a;
-  text-align: center;
+  width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden; /* 가로 스크롤 방지 */
 }
 
 .talismangContent .summary {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: bold;
-  margin-bottom: 16px;
   color: #d32f2f;
+  text-align: center;
+  margin: 0;
+  padding-bottom: 10px;
   border-bottom: 2px solid #d32f2f;
-  padding-bottom: 12px;
+  word-break: keep-all; /* 한글 줄바꿈 개선 */
 }
 
 .talismangContent .analysis {
-  font-size: 15px; /* 약간 더 크게 */
-  line-height: 1.9; /* 줄 간격 넓게 */
+  font-size: 16px;
+  line-height: 1.7;
   text-align: left;
-  color: #000000;
-  font-weight: 500; /* 약간 볼드 */
+  color: #1a1a1a;
+  font-weight: 500;
+  word-break: keep-all; /* 한글 줄바꿈 개선 */
 }
 
 .talismangContent .analysis p {
-  margin-bottom: 12px;
+  margin: 0 0 10px 0;
 }
 
+/* 스크롤바 스타일링 (선택사항) */
+.talismangContent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.talismangContent::-webkit-scrollbar-thumb {
+  background: rgba(211, 47, 47, 0.3);
+  border-radius: 2px;
+}
+
+.talismangContent::-webkit-scrollbar-track {
+  background: transparent;
+}
 /* 안내 텍스트 */
 .hint {
   text-align: center;
