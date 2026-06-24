@@ -60,12 +60,12 @@
 
 .title {
   font-size: clamp(2.4rem, 4vw, 3.2rem);
-  font-weight: 300;
+  font-weight: normal;
   color: #e8d5a3;
   letter-spacing: 0.14em;
   line-height: 1.2;
   margin: 0 0 0;
-  font-family: Georgia, serif;
+  font-family: 'JeongseonArirangHon', Georgia, serif;
   opacity: 0;
   transform: translateY(20px);
   animation: fadeUp 1s ease-out 0.45s forwards;
@@ -89,6 +89,7 @@
   line-height: 1.9;
   letter-spacing: 0.03em;
   max-width: 360px;
+  font-family: 'GyeonggiMillenniumBackground', serif;
 }
 
 .muted {
@@ -119,6 +120,7 @@
   cursor: pointer;
   transition: background 0.25s, border-color 0.25s, transform 0.2s;
   white-space: nowrap;
+  font-family: 'GyeonggiMillenniumBackground', serif;
 }
 
 .btn:hover {
@@ -140,6 +142,7 @@
   font-size: 0.7rem;
   color: rgba(232, 213, 163, 0.28);
   letter-spacing: 0.06em;
+  font-family: 'GyeonggiMillenniumBackground', serif;
 }
 
 @keyframes fadeUp {
