@@ -94,6 +94,7 @@
   color: rgba(232, 213, 163, 0.55);
   letter-spacing: 0.06em;
   animation: pulse 2s ease-in-out infinite;
+  font-family: 'GyeonggiMillenniumBackground', serif;
 }
 
 .loading {
