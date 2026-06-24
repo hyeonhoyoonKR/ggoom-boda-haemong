@@ -6,10 +6,14 @@
 	- 제목 폰트: JeongseonArirangHon 적용
 
 		IntroScreen: .title
+
 		ResultScreen: .summary
 
 	- 본문 텍스트 폰트: GyeonggiMillenniumBackground 적용
 
 		IntroScreen: .subtitle, .btn, .hint
+
 		LoadingScreen: .hint
+
 		ResultScreen: .analysis p, .resetBtn
+
