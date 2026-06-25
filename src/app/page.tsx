@@ -14,29 +14,43 @@ type Result = {
   badElements?: string;
 };
 
-const MOCK_RESULT: Result = {
-  summary: "당신의 꿈은 변화와 새로운 시작을 암시합니다.",
-  analysis:
-    "꿈 속에서 나타난 상징들은 당신의 무의식이 현재 삶의 전환점에 서 있음을 나타냅니다.\n\n수천 년의 해몽 전통에 따르면 이러한 꿈은 길몽으로 해석됩니다. 앞으로의 여정에 밝은 기운이 가득할 것입니다.\n\n가까운 미래에 기쁜 소식이 찾아올 징조가 보이니, 마음을 열고 새로운 인연과 기회를 받아들이세요.",
-  goodElements: "새로운 기회, 대인운 상승, 금전운 호조",
-  badElements: "성급한 결정 주의, 건강 관리 필요",
-};
-
 export default function Home() {
   const [stage, setStage] = useState<Stage>("intro");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
 
-  // TODO: 테스트용 — 추후 실제 입력 화면으로 교체 예정
-  const handleStart = () => {
-    setStage("loading");
+  const handleSubmit = async (dream: string) => {
+    if (!dream.trim() || isLoading) return;
+
     setIsLoading(true);
-    setTimeout(() => {
-      setResult(MOCK_RESULT);
+    setError("");
+    setStage("loading");
+
+    try {
+      const res = await fetch("/api/interpret-dream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dream: dream.trim() }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "분석 요청에 실패했습니다.");
+      }
+
+      const data = await res.json();
+      setResult(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "예기치 않은 오류가 발생했습니다.");
+      setStage("intro");
+    } finally {
       setIsLoading(false);
-      setStage("result");
-    }, 3000);
+    }
+  };
+
+  const handleOpen = () => {
+    if (!isLoading && result) setStage("result");
   };
 
   const handleReset = () => {
@@ -47,9 +61,9 @@ export default function Home() {
 
   return (
     <>
-      {stage === "intro" && <IntroScreen onStart={handleStart} />}
+      {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
       {stage === "loading" && (
-        <LoadingScreen isLoading={isLoading} onOpen={() => {}} />
+        <LoadingScreen isLoading={isLoading} onOpen={handleOpen} />
       )}
       {stage === "result" && result && (
         <ResultScreen
