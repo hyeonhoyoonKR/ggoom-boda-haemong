@@ -23,7 +23,7 @@
 
 .resultField {
   width: 100%;
-  max-width: 480px;
+  max-width: 528px;
   background: rgba(232, 213, 163, 0.05);
   border: 1px solid rgba(232, 213, 163, 0.2);
   border-radius: 16px;
@@ -58,7 +58,7 @@
 
 .elementsRow {
   width: 100%;
-  max-width: 480px;
+  max-width: 528px;
   display: flex;
 }
 
@@ -92,9 +92,9 @@
 
 .fieldText {
   margin: 0;
-  font-size: 0.85rem;
-  color: rgba(232, 213, 163, 0.75);
-  line-height: 1.7;
+  font-size: 1rem;
+  color: rgba(232, 213, 163, 0.85);
+  line-height: 1.8;
   font-family: 'GyeonggiMillenniumBackground', serif;
 }
 

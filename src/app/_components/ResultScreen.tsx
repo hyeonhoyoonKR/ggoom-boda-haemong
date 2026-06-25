@@ -27,11 +27,11 @@ export default function ResultScreen({ summary, analysis, goodElements, badEleme
 
         <div className={styles.elementsRow}>
           <div className={styles.goodField}>
-            <span className={styles.fieldLabel}>좋은요소</span>
+            <span className={styles.fieldLabel}>좋은 징조</span>
             <p className={styles.fieldText}>{goodElements || "—"}</p>
           </div>
           <div className={styles.badField}>
-            <span className={styles.fieldLabel}>나쁜요소</span>
+            <span className={styles.fieldLabel}>조심할 징조</span>
             <p className={styles.fieldText}>{badElements || "—"}</p>
           </div>
         </div>

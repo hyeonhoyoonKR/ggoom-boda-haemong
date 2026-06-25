@@ -91,16 +91,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const prompt = `당신은 현대 심리학과 데이터 분석에 기반한 꿈 해몽 전문가입니다. 
-    사용자가 설명한 꿈을 분석하고 해당 풀이들을 미신처럼 해석을해서 무당처럼 말을 하되 따뜻하게, 사용자의 근 미래에 대한 운세를 포함해서 200~300자 분량의 다음 형식으로 응답해주세요, 허나 글의 맥락이 꿈의 내용이 아닌것 같을때는 풀이하지 말고 해몽을 못할것 같다고 말해줘:
+    const prompt = `당신은 현대 심리학과 데이터 분석에 기반한 꿈 해몽 전문가입니다.
+사용자가 설명한 꿈을 분석하고 해당 풀이들을 미신처럼 해석을해서 무당처럼 말을 하되 따뜻하게, 사용자의 근 미래에 대한 운세를 포함해서 200~300자 분량의 다음 형식으로 응답해주세요.
+글의 맥락이 꿈의 내용이 아닌것 같을때는 풀이하지 말고 해몽을 못할것 같다고 말해줘.
 
-[첫 번째 줄: "당신의 꿈은 ~~~입니다." 형태의 한 줄 요약]
+반드시 아래 형식을 정확히 지켜서 응답해주세요:
 
-[그 다음부터: 3-4개의 단락으로 나눈 상세한 해석]
+SUMMARY: 당신의 꿈은 ~~~입니다.
 
-꿈: ${dream}
+ANALYSIS:
+(3-4개의 단락으로 나눈 상세한 해석)
 
-이 답변은 현대 심리학적 관점과 데이터 기반 분석을 바탕으로 작성해주세요. 신뢰감 있고 깊이 있는 해석을 제공하되, 꿈의 심볼과 감정을 중심으로 분석해주세요.`;
+GOOD: (해몽 풀이를 바탕으로 좋은 징조를 한 문장으로)
+BAD: (해몽 풀이를 바탕으로 조심해야 할 징조를 한 문장으로)
+
+꿈: ${dream}`;
 
     const result = await generateDreamInterpretation(prompt);
     const responseText =
@@ -113,9 +118,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const lines = responseText.split("\n").filter((line) => line.trim());
-    const summary = lines[0] || "";
-    const analysisText = lines.slice(1).join("\n");
+    const summaryMatch = responseText.match(/SUMMARY:\s*(.+)/);
+    const analysisMatch = responseText.match(/ANALYSIS:\s*([\s\S]*?)(?=GOOD:|BAD:|$)/);
+    const goodMatch = responseText.match(/GOOD:\s*(.+)/);
+    const badMatch = responseText.match(/BAD:\s*(.+)/);
+
+    const summary = summaryMatch?.[1]?.trim() || "";
+    const analysisText = analysisMatch?.[1]?.trim() || "";
+    const goodElements = goodMatch?.[1]?.trim() || undefined;
+    const badElements = badMatch?.[1]?.trim() || undefined;
 
     if (supabase) {
       const { error: insertError } = await supabase.from("data").insert([
@@ -135,6 +146,8 @@ export async function POST(request: Request) {
     return Response.json({
       summary,
       analysis: analysisText,
+      goodElements,
+      badElements,
     });
   } catch (error) {
     console.error("Error:", error);
