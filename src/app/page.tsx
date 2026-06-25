@@ -5,7 +5,7 @@ import IntroScreen from "./_components/IntroScreen";
 import LoadingScreen from "./_components/LoadingScreen";
 import ResultScreen from "./_components/ResultScreen";
 
-type Stage = "intro" | "input" | "loading" | "result";
+type Stage = "intro" | "loading" | "result";
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>("intro");
@@ -13,10 +13,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ summary: string; analysis: string } | null>(null);
   const [error, setError] = useState("");
-
-  const handleStart = () => {
-    setStage("input");
-  };
 
   const handleSubmit = async (dream: string) => {
     if (!dream.trim() || isLoading) return;
@@ -62,11 +58,7 @@ export default function Home() {
   return (
     <>
       {stage === "intro" && (
-        <IntroScreen onStart={handleStart} />
-      )}
-      {stage === "input" && (
-        <IntroScreen onStart={() => {}} />
-        // TODO: InputOverlay 컴포넌트로 교체 예정
+        <IntroScreen onSubmit={handleSubmit} />
       )}
       {stage === "loading" && (
         <LoadingScreen isLoading={isLoading} onOpen={handleOpen} />

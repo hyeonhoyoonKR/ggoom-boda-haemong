@@ -17,3 +17,9 @@
 
 		ResultScreen: .analysis p, .resetBtn
 
+### 0625
+- IntroScreen 초안 완성
+	- 첫 화면 별 interaction
+	- 첫 화면 페이드인 애니메이션
+	- 키보드 입력 시 텍스트박스 출현
+	- 엔터 입력 시 dreamtext로 page.tsx에 내용 저장 후 전달
