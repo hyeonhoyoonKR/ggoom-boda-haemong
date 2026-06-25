@@ -4,6 +4,7 @@ import { useState } from "react";
 import IntroScreen from "./_components/IntroScreen";
 import LoadingScreen from "./_components/LoadingScreen";
 import ResultScreen from "./_components/ResultScreen";
+import StarBackground from "./_components/StarBackground";
 
 type Stage = "intro" | "loading" | "result";
 
@@ -19,15 +20,18 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
+  const [moonPos, setMoonPos] = useState<{ x: number; y: number } | undefined>(undefined);
 
-  const handleSubmit = async (dream: string) => {
+  const handleSubmit = async (dream: string, pos: { x: number; y: number }) => {
     if (!dream.trim() || isLoading) return;
 
+    setMoonPos(pos);
     setIsLoading(true);
     setError("");
     setStage("loading");
 
     try {
+      return; // TODO: remove
       const res = await fetch("/api/interpret-dream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,9 +62,11 @@ export default function Home() {
 
   return (
     <>
+      <div style={{ position: "fixed", inset: 0, background: "#0d1b3e", zIndex: 0 }} />
+      <StarBackground />
       {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
       {stage === "loading" && (
-        <LoadingScreen isLoading={isLoading} />
+        <LoadingScreen isLoading={isLoading} moonPos={moonPos} />
       )}
       {stage === "result" && result && (
         <ResultScreen
