@@ -41,16 +41,13 @@ export default function Home() {
 
       const data = await res.json();
       setResult(data);
+      setStage("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "예기치 않은 오류가 발생했습니다.");
       setStage("intro");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleOpen = () => {
-    if (!isLoading && result) setStage("result");
   };
 
   const handleReset = () => {
@@ -63,7 +60,7 @@ export default function Home() {
     <>
       {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
       {stage === "loading" && (
-        <LoadingScreen isLoading={isLoading} onOpen={handleOpen} />
+        <LoadingScreen isLoading={isLoading} />
       )}
       {stage === "result" && result && (
         <ResultScreen
