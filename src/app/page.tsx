@@ -5,23 +5,24 @@ import IntroScreen from "./_components/IntroScreen";
 import LoadingScreen from "./_components/LoadingScreen";
 import ResultScreen from "./_components/ResultScreen";
 
-type Stage = "intro" | "input" | "loading" | "result";
+type Stage = "intro" | "loading" | "result";
+
+type Result = {
+  summary: string;
+  analysis: string;
+  goodElements?: string;
+  badElements?: string;
+};
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>("intro");
-  const [dreamText, setDreamText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<{ summary: string; analysis: string } | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
-
-  const handleStart = () => {
-    setStage("input");
-  };
 
   const handleSubmit = async (dream: string) => {
     if (!dream.trim() || isLoading) return;
 
-    setDreamText(dream);
     setIsLoading(true);
     setError("");
     setStage("loading");
@@ -40,6 +41,7 @@ export default function Home() {
 
       const data = await res.json();
       setResult(data);
+      setStage("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "예기치 않은 오류가 발생했습니다.");
       setStage("intro");
@@ -48,42 +50,41 @@ export default function Home() {
     }
   };
 
-  const handleOpen = () => {
-    if (!isLoading && result) setStage("result");
-  };
-
   const handleReset = () => {
     setStage("intro");
     setResult(null);
-    setDreamText("");
     setError("");
   };
 
   return (
     <>
-      {stage === "intro" && (
-        <IntroScreen onStart={handleStart} />
-      )}
-      {stage === "input" && (
-        <IntroScreen onStart={() => {}} />
-        // TODO: InputOverlay 컴포넌트로 교체 예정
-      )}
+      {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
       {stage === "loading" && (
-        <LoadingScreen isLoading={isLoading} onOpen={handleOpen} />
+        <LoadingScreen isLoading={isLoading} />
       )}
       {stage === "result" && result && (
         <ResultScreen
           summary={result.summary}
           analysis={result.analysis}
+          goodElements={result.goodElements}
+          badElements={result.badElements}
           onReset={handleReset}
         />
       )}
       {error && (
-        <div style={{
-          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-          background: "rgba(255,100,100,0.15)", color: "#ff9999",
-          padding: "12px 20px", borderRadius: 12, fontSize: 14,
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(255,100,100,0.15)",
+            color: "#ff9999",
+            padding: "12px 20px",
+            borderRadius: 12,
+            fontSize: 14,
+          }}
+        >
           {error}
         </div>
       )}
