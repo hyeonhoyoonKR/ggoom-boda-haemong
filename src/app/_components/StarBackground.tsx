@@ -84,8 +84,8 @@ export default function StarBackground() {
         if (dist < maxDist && dist > 0) {
           const proximity = 1 - dist / maxDist;
           const force = proximity * s.depth;
-          s.deltax += (-(dx / dist) * force * 100 * s.size - s.deltax) * 0.1;
-          s.deltay += (-(dy / dist) * force * 100 * s.size - s.deltay) * 0.1;
+          s.deltax += (-(dx / dist) * force * 100 * s.size - s.deltax) * 0.2;
+          s.deltay += (-(dy / dist) * force * 100 * s.size - s.deltay) * 0.2;
           s.alpha += (0.95 - s.alpha) * proximity * 0.15;
         } else {
           s.deltax += (0 - s.deltax) * 0.06;

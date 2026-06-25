@@ -20,12 +20,9 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
-  const [moonPos, setMoonPos] = useState<{ x: number; y: number } | undefined>(undefined);
-
-  const handleSubmit = async (dream: string, pos: { x: number; y: number }) => {
+  const handleSubmit = async (dream: string) => {
     if (!dream.trim() || isLoading) return;
 
-    setMoonPos(pos);
     setIsLoading(true);
     setError("");
     setStage("loading");
@@ -66,7 +63,7 @@ export default function Home() {
       <StarBackground />
       {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
       {stage === "loading" && (
-        <LoadingScreen isLoading={isLoading} moonPos={moonPos} />
+        <LoadingScreen isLoading={isLoading} />
       )}
       {stage === "result" && result && (
         <ResultScreen
