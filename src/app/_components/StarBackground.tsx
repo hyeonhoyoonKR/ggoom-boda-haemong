@@ -27,8 +27,8 @@ export default function StarBackground() {
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      logicalW = canvas.offsetWidth;
-      logicalH = canvas.offsetHeight;
+      logicalW = window.innerWidth;
+      logicalH = window.innerHeight;
       canvas.width = logicalW * dpr;
       canvas.height = logicalH * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -108,28 +108,25 @@ export default function StarBackground() {
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      const r = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - r.left;
-      mouse.y = e.clientY - r.top;
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
     };
     const onMouseLeave = () => {
       mouse.x = -9999;
       mouse.y = -9999;
     };
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas.parentElement!);
+    window.addEventListener("resize", resize);
+    window.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseleave", onMouseLeave);
     resize();
     draw();
 
-    canvas.parentElement?.addEventListener("mousemove", onMouseMove);
-    canvas.parentElement?.addEventListener("mouseleave", onMouseLeave);
-
     return () => {
       cancelAnimationFrame(animId);
-      ro.disconnect();
-      canvas.parentElement?.removeEventListener("mousemove", onMouseMove);
-      canvas.parentElement?.removeEventListener("mouseleave", onMouseLeave);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
@@ -137,10 +134,12 @@ export default function StarBackground() {
     <canvas
       ref={canvasRef}
       style={{
-        position: "absolute",
+        position: "fixed",
         inset: 0,
-        width: "100%",
-        height: "100%",
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        zIndex: 1,
       }}
     />
   );
