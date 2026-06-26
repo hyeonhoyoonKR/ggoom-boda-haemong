@@ -1,9 +1,9 @@
 .wrap {
   position: relative;
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
   background: #0d1b3e;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   align-items: center;
   justify-content: center;

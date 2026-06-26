@@ -58,13 +58,10 @@ export default function Home() {
   };
 
   return (
-    <>
-      <div style={{ position: "fixed", inset: 0, background: "#0d1b3e", zIndex: 0 }} />
+    <div style={{ position: "fixed", inset: 0, background: "#0d1b3e" }}>
       <StarBackground />
       {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
-      {stage === "loading" && (
-        <LoadingScreen isLoading={isLoading} />
-      )}
+      {stage === "loading" && <LoadingScreen isLoading={isLoading} />}
       {stage === "result" && result && (
         <ResultScreen
           summary={result.summary}
@@ -77,7 +74,7 @@ export default function Home() {
       {error && (
         <div
           style={{
-            position: "fixed",
+            position: "absolute",
             bottom: 24,
             left: "50%",
             transform: "translateX(-50%)",
@@ -86,11 +83,12 @@ export default function Home() {
             padding: "12px 20px",
             borderRadius: 12,
             fontSize: 14,
+            zIndex: 99,
           }}
         >
           {error}
         </div>
       )}
-    </>
+    </div>
   );
 }

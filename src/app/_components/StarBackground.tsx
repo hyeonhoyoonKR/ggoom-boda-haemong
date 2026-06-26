@@ -27,8 +27,9 @@ export default function StarBackground() {
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      logicalW = window.innerWidth;
-      logicalH = window.innerHeight;
+      const parent = canvas.parentElement;
+      logicalW = parent ? parent.clientWidth : window.innerWidth;
+      logicalH = parent ? parent.clientHeight : window.innerHeight;
       canvas.width = logicalW * dpr;
       canvas.height = logicalH * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -99,6 +100,7 @@ export default function StarBackground() {
         const r = s.size * 3.5;
         const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
         grad.addColorStop(0, `rgba(232,213,163,${s.alpha})`);
+        grad.addColorStop(1, `rgba(232,213,163,0)`);
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
         ctx.fillStyle = grad;
@@ -134,12 +136,15 @@ export default function StarBackground() {
     <canvas
       ref={canvasRef}
       style={{
-        position: "fixed",
-        inset: 0,
-        width: "100vw",
-        height: "100vh",
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
         pointerEvents: "none",
-        zIndex: 1,
+        display: "block",
       }}
     />
   );
