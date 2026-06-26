@@ -29,6 +29,7 @@ export default function StarBackground() {
       const dpr = window.devicePixelRatio || 1;
       logicalW = window.innerWidth;
       logicalH = window.innerHeight;
+	  console.log(logicalW, logicalH);
       canvas.width = logicalW * dpr;
       canvas.height = logicalH * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
