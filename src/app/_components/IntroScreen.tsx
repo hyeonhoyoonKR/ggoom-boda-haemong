@@ -4,27 +4,29 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./IntroScreen.module.css";
 
 interface Props {
-  onSubmit: (dreamText: string, moonPos: { x: number; y: number }) => void;
+  onSubmit: (dreamText: string) => void;
 }
 
 export default function IntroScreen({ onSubmit }: Props) {
   const moonParallaxRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const moonRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isSubmittingRef = useRef(false);
   const [inputMode, setInputMode] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!moonParallaxRef.current) return;
+      if (isSubmittingRef.current || !moonParallaxRef.current) return;
       const mx = (e.clientX / window.innerWidth - 0.5) * -20;
       const my = (e.clientY / window.innerHeight - 0.5) * -20;
       moonParallaxRef.current.style.transform = `translate(${mx}px, ${my}px)`;
     };
     const onMouseLeave = () => {
-      if (moonParallaxRef.current)
-        moonParallaxRef.current.style.transform = "translate(0px, 0px)";
+      if (isSubmittingRef.current || !moonParallaxRef.current) return;
+      moonParallaxRef.current.style.transform = "translate(0px, 0px)";
     };
     window.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseleave", onMouseLeave);
@@ -69,9 +71,35 @@ export default function IntroScreen({ onSubmit }: Props) {
     }
   }, [inputMode]);
 
+  const doSubmit = (dream: string) => {
+    if (!dream.trim() || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setSubmitting(true);
+
+    const moonEl = moonRef.current;
+    if (!moonEl) { onSubmit(dream); return; }
+
+    const rect = moonEl.getBoundingClientRect();
+    const dx = window.innerWidth / 2 - (rect.left + rect.width / 2);
+    const dy = window.innerHeight / 2 - (rect.top + rect.height / 2);
+    const scale = 120 / 52;
+
+    // .moon has no CSS animation, so JS transition works without conflict
+    moonEl.style.transition = "none";
+    moonEl.style.transform = "translate(0, 0) scale(1)";
+    void moonEl.getBoundingClientRect();
+
+    requestAnimationFrame(() => {
+      moonEl.style.transition = "transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)";
+      moonEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+    });
+
+    moonEl.addEventListener("transitionend", () => setTimeout(() => onSubmit(dream), 100), { once: true });
+  };
+
   return (
     <div className={styles.wrap} onClick={() => {
-        if (inputMode || exiting) return;
+        if (inputMode || exiting || submitting) return;
         setExiting(true);
         textareaRef.current?.focus();
         setTimeout(() => {
@@ -101,7 +129,10 @@ export default function IntroScreen({ onSubmit }: Props) {
                 화면을 클릭해주세요
               </p>
             </div>
-            <div className={`${styles.dreamInputWrap} ${inputMode ? styles.dreamInputVisible : ''}`}>
+            <div
+                className={`${styles.dreamInputWrap} ${inputMode ? styles.dreamInputVisible : ''}`}
+                style={submitting ? { opacity: 0, pointerEvents: "none", transition: "opacity 0.25s ease" } : {}}
+              >
               <textarea
                 ref={textareaRef}
                 className={styles.dreamInput}
@@ -110,13 +141,7 @@ export default function IntroScreen({ onSubmit }: Props) {
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (inputValue.trim()) {
-                      const rect = moonRef.current?.getBoundingClientRect();
-                      const moonPos = rect
-                        ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-                        : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-                      onSubmit(inputValue.trim(), moonPos);
-                    }
+                    doSubmit(inputValue.trim());
                   }
                 }}
                 placeholder="꿈의 내용을 입력해주세요..."
@@ -125,14 +150,9 @@ export default function IntroScreen({ onSubmit }: Props) {
               <button	
                 type="button"
                 className={styles.submitArrow}
-                onClick={() => {
-                  if (inputValue.trim()) {
-                    const rect = moonRef.current?.getBoundingClientRect();
-                    const moonPos = rect
-                      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-                      : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-                    onSubmit(inputValue.trim(), moonPos);
-                  }
+                onClick={e => {
+                  e.stopPropagation();
+                  doSubmit(inputValue.trim());
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
