@@ -12,6 +12,9 @@ interface Props {
   sentinelRef: React.RefObject<HTMLDivElement | null>;
   /** Marks the intro moon's resting spot (the 52px .moon element). */
   introSentinelRef: React.RefObject<HTMLDivElement | null>;
+  /** Screen position of the intro moon captured just before IntroScreen unmounts,
+   *  so the fly-in can start from the exact intro moon location. */
+  introMoonStartPos: React.RefObject<{ x: number; y: number } | null>;
   /** True while flying back from the result screen to the intro moon. */
   moonReturning: boolean;
   /** Called once the moon has reached the intro spot (handoff to IntroScreen). */
@@ -27,6 +30,7 @@ export default function MoonLayer({
   onExitDone,
   sentinelRef,
   introSentinelRef,
+  introMoonStartPos,
   moonReturning,
   onReturnDone,
 }: Props) {
@@ -38,21 +42,44 @@ export default function MoonLayer({
   const onReturnDoneRef = useRef(onReturnDone);
   onReturnDoneRef.current = onReturnDone;
   const moonBasePos = useRef({ x: 0, y: 0 });
+  // Guards against re-running the fly-in if setOrbiting(true) triggers a re-render
+  // while the animation is already in progress.
+  const flyInStarted = useRef(false);
 
-  // Position moon at center when loading stage starts
-  // Runs whenever stage changes — useLayoutEffect with [] fires on mount (intro stage),
-  // at which point moonWrapRef is null because we return null for intro.
+  // Fly the moon from the intro moon's captured position to screen center.
+  // useLayoutEffect fires synchronously before paint, so the moon is positioned
+  // before the first frame — no flash at (0,0). flyInStarted prevents a second
+  // run if setOrbiting(true) causes an intermediate re-render.
   useLayoutEffect(() => {
-    if (stage !== "loading") return;
-    // Reset transient state so a reset → resubmit cycle behaves like a fresh run
+    if (stage !== "loading") {
+      flyInStarted.current = false;
+      return;
+    }
     setOrbiting(true);
+    if (flyInStarted.current) return;
+    flyInStarted.current = true;
+
     const el = moonWrapRef.current;
     if (!el) return;
+
+    const startPos = introMoonStartPos.current;
     el.style.transition = "none";
-    el.style.transform = `translate(${window.innerWidth / 2 - 60}px, ${
-      window.innerHeight / 2 - 60
-    }px) scale(1)`;
+    el.style.transform = startPos
+      ? `translate(${startPos.x}px, ${startPos.y}px) scale(${INTRO_SCALE})`
+      : `translate(${window.innerWidth / 2 - 60}px, ${window.innerHeight / 2 - 60}px) scale(1)`;
     el.style.opacity = "1";
+
+    requestAnimationFrame(() => {
+      const w = moonWrapRef.current;
+      if (!w) return;
+      w.style.transition = "transform 0.65s ease-in-out";
+      w.style.transform = `translate(${window.innerWidth / 2 - 60}px, ${
+        window.innerHeight / 2 - 60
+      }px) scale(1)`;
+    });
+  // introMoonStartPos is a stable ref object — its .current changes but the ref
+  // itself never changes, so it doesn't belong in deps.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
   // Handle loading completion: complete orbit → 500ms pause → call onExitDone.

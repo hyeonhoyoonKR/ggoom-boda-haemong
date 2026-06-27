@@ -88,33 +88,8 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
     if (!dream.trim() || isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setSubmitting(true);
-
-    const moonEl = moonRef.current;
-    if (!moonEl) {
-      onSubmit(dream);
-      return;
-    }
-
-    const rect = moonEl.getBoundingClientRect();
-    const dx = window.innerWidth / 2 - (rect.left + rect.width / 2);
-    const dy = window.innerHeight / 2 - (rect.top + rect.height / 2);
-    const scale = 120 / 52;
-
-    // .moon has no CSS animation, so JS transition works without conflict
-    moonEl.style.transition = "none";
-    moonEl.style.transform = "translate(0, 0) scale(1)";
-    void moonEl.getBoundingClientRect();
-
-    requestAnimationFrame(() => {
-      moonEl.style.transition = "transform 0.65s ease-in-out";
-      moonEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
-    });
-
-    moonEl.addEventListener(
-      "transitionend",
-      () => setTimeout(() => onSubmit(dream), 100),
-      { once: true },
-    );
+    // MoonLayer handles the fly-in from the intro moon position to center.
+    onSubmit(dream);
   };
 
   const handleWrapClick = () => {
@@ -138,7 +113,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
               <div
                 className={`${styles.moonBlock} ${
                   skipMoonEntrance.current ? styles.moonSettled : ""
-                } ${moonReturning ? styles.moonHidden : ""}`}
+                } ${moonReturning || submitting ? styles.moonHidden : ""}`}
               >
                 <div ref={moonRef} className={styles.moon}>
                   <svg className={styles.moonSvg} viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
@@ -156,7 +131,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
           </div>
           <div className={styles.textGroup}>
             <div
-              className={`${styles.staticContent} ${exiting || inputMode ? styles.staticGone : ""}`}
+              className={`${styles.staticContent} ${exiting || inputMode ? styles.staticGone : ""} ${skipMoonEntrance.current ? styles.contentSettled : ""}`}
             >
               <h1 className={styles.title}>꿈해몽</h1>
               <div className={styles.divider} />

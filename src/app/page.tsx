@@ -25,9 +25,18 @@ export default function Home() {
   const [moonReturning, setMoonReturning] = useState(false);
   const moonSentinelRef = useRef<HTMLDivElement>(null);
   const introMoonRef = useRef<HTMLDivElement>(null);
+  // Captured just before IntroScreen unmounts so MoonLayer can start its fly-in
+  // from the exact intro moon position (including any parallax offset).
+  const introMoonStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const handleSubmit = async (dream: string) => {
     if (!dream.trim() || isLoading) return;
+
+    const moonEl = introMoonRef.current;
+    if (moonEl) {
+      const rect = moonEl.getBoundingClientRect();
+      introMoonStartPos.current = { x: rect.left, y: rect.top };
+    }
 
     setIsLoading(true);
     setError("");
@@ -78,6 +87,7 @@ export default function Home() {
         onExitDone={handleLoadingExit}
         sentinelRef={moonSentinelRef}
         introSentinelRef={introMoonRef}
+        introMoonStartPos={introMoonStartPos}
         moonReturning={moonReturning}
         onReturnDone={() => setMoonReturning(false)}
       />

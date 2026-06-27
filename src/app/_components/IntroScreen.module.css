@@ -50,6 +50,21 @@
   animation: none;
 }
 
+/* Reset-return: skip fadeUp for title/divider/subtitle so text is already visible
+   when MoonLayer's moon is flying in — no jarring fade-while-moon-lands. */
+.contentSettled .title,
+.contentSettled .divider {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+.contentSettled .subtitle {
+  opacity: 1;
+  transform: none;
+  animation: subtitleBreath 2.5s ease-in-out infinite;
+}
+
 /* Hidden (but kept in layout) while MoonLayer is still flying in; revealed at handoff. */
 .moonHidden {
   visibility: hidden;
