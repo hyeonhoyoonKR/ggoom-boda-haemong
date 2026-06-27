@@ -22,20 +22,23 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
   const skipMoonEntrance = useRef(moonReturning);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isSubmittingRef = useRef(false);
+  const inputModeRef = useRef(false);
   const [inputMode, setInputMode] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => { inputModeRef.current = inputMode; }, [inputMode]);
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (isSubmittingRef.current || !moonParallaxRef.current) return;
+      if (isSubmittingRef.current || inputModeRef.current || !moonParallaxRef.current) return;
       const mx = (e.clientX / window.innerWidth - 0.5) * -20;
       const my = (e.clientY / window.innerHeight - 0.5) * -20;
       moonParallaxRef.current.style.transform = `translate(${mx}px, ${my}px)`;
     };
     const onMouseLeave = () => {
-      if (isSubmittingRef.current || !moonParallaxRef.current) return;
+      if (isSubmittingRef.current || inputModeRef.current || !moonParallaxRef.current) return;
       moonParallaxRef.current.style.transform = "translate(0px, 0px)";
     };
     window.addEventListener("mousemove", onMouseMove);
@@ -103,7 +106,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
     void moonEl.getBoundingClientRect();
 
     requestAnimationFrame(() => {
-      moonEl.style.transition = "transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)";
+      moonEl.style.transition = "transform 0.65s ease-in-out";
       moonEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
     });
 
@@ -138,7 +141,15 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
                 } ${moonReturning ? styles.moonHidden : ""}`}
               >
                 <div ref={moonRef} className={styles.moon}>
-                  <div className={styles.moonCut} />
+                  <svg className={styles.moonSvg} viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <mask id="intro-crescent">
+                        <circle cx="26" cy="26" r="26" fill="white" />
+                        <circle cx="30" cy="16" r="21" fill="black" />
+                      </mask>
+                    </defs>
+                    <circle cx="26" cy="26" r="26" fill="#e8d5a3" mask="url(#intro-crescent)" />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -152,7 +163,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
               <p className={styles.subtitle}>
                 {/* 수천 년의 해몽 전통과 현대 심리학이<br />
                 당신의 꿈이 전하는 말을 읽어드립니다. */}
-                화면을 클릭해주세요
+                화면을 클릭하세요
               </p>
             </div>
             <div

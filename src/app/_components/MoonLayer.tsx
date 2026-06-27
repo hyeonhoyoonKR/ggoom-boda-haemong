@@ -31,15 +31,13 @@ export default function MoonLayer({
   onReturnDone,
 }: Props) {
   const [orbiting, setOrbiting] = useState(true);
-  const [parallaxActive, setParallaxActive] = useState(false);
   const moonWrapRef = useRef<HTMLDivElement>(null);
-  const moonCutRef = useRef<HTMLDivElement>(null);
+  const moonCutRef = useRef<SVGCircleElement>(null);
   const onExitDoneRef = useRef(onExitDone);
   onExitDoneRef.current = onExitDone;
   const onReturnDoneRef = useRef(onReturnDone);
   onReturnDoneRef.current = onReturnDone;
   const moonBasePos = useRef({ x: 0, y: 0 });
-  const mouseOffset = useRef({ x: 0, y: 0 });
 
   // Position moon at center when loading stage starts
   // Runs whenever stage changes — useLayoutEffect with [] fires on mount (intro stage),
@@ -48,7 +46,6 @@ export default function MoonLayer({
     if (stage !== "loading") return;
     // Reset transient state so a reset → resubmit cycle behaves like a fresh run
     setOrbiting(true);
-    setParallaxActive(false);
     const el = moonWrapRef.current;
     if (!el) return;
     el.style.transition = "none";
@@ -99,15 +96,13 @@ export default function MoonLayer({
     };
 
     // Initial: animate from loading-center to the sentinel position.
-    syncBase();
     requestAnimationFrame(() => {
       const w = moonWrapRef.current;
       if (!w) return;
-      w.style.transition = "transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
+      syncBase();
+      w.style.transition = "transform 0.5s ease-in-out";
       w.style.transform = `translate(${moonBasePos.current.x}px, ${moonBasePos.current.y}px) scale(0.5)`;
     });
-
-    const t = setTimeout(() => setParallaxActive(true), 550);
 
     // Keep the moon glued above the text field when the layout shifts
     // (window resize, or scrolling the result content). The moon is a fixed
@@ -117,15 +112,12 @@ export default function MoonLayer({
       const w = moonWrapRef.current;
       if (!w) return;
       w.style.transition = "none";
-      w.style.transform = `translate(${moonBasePos.current.x + mouseOffset.current.x}px, ${
-        moonBasePos.current.y + mouseOffset.current.y
-      }px) scale(0.5)`;
+      w.style.transform = `translate(${moonBasePos.current.x}px, ${moonBasePos.current.y}px) scale(0.5)`;
     };
     window.addEventListener("resize", reposition);
     window.addEventListener("scroll", reposition, true); // capture: catch inner scroll too
 
     return () => {
-      clearTimeout(t);
       window.removeEventListener("resize", reposition);
       window.removeEventListener("scroll", reposition, true);
     };
@@ -137,9 +129,6 @@ export default function MoonLayer({
   useEffect(() => {
     if (stage !== "intro" || !moonReturning) return;
 
-    setParallaxActive(false);
-    mouseOffset.current = { x: 0, y: 0 };
-
     const wrap = moonWrapRef.current;
     const target = introSentinelRef.current;
     if (!wrap || !target) {
@@ -147,11 +136,11 @@ export default function MoonLayer({
       return;
     }
 
-    const rect = target.getBoundingClientRect();
     requestAnimationFrame(() => {
       const w = moonWrapRef.current;
       if (!w) return;
-      w.style.transition = "transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)";
+      const rect = target.getBoundingClientRect();
+      w.style.transition = "transform 0.6s ease-in-out";
       w.style.transform = `translate(${rect.left}px, ${rect.top}px) scale(${INTRO_SCALE})`;
     });
 
@@ -159,38 +148,6 @@ export default function MoonLayer({
     return () => clearTimeout(t);
   }, [stage, moonReturning, introSentinelRef]);
 
-  // Parallax (activates after transition completes)
-  useEffect(() => {
-    if (!parallaxActive) return;
-
-    const wrap = moonWrapRef.current;
-    if (!wrap) return;
-
-    // Read moonBasePos.current live (not destructured once) so the parallax
-    // offset always applies on top of the latest resize/scroll-synced base.
-    const onMouseMove = (e: MouseEvent) => {
-      const mx = (e.clientX / window.innerWidth - 0.5) * -20;
-      const my = (e.clientY / window.innerHeight - 0.5) * -20;
-      mouseOffset.current = { x: mx, y: my };
-      const { x: bx, y: by } = moonBasePos.current;
-      wrap.style.transition = "none";
-      wrap.style.transform = `translate(${bx + mx}px, ${by + my}px) scale(0.5)`;
-    };
-    const onMouseLeave = () => {
-      mouseOffset.current = { x: 0, y: 0 };
-      const { x: bx, y: by } = moonBasePos.current;
-      wrap.style.transition = "transform 0.4s ease-out";
-      wrap.style.transform = `translate(${bx}px, ${by}px) scale(0.5)`;
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseleave", onMouseLeave);
-
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseleave", onMouseLeave);
-    };
-  }, [parallaxActive]);
 
   // Hidden in intro, except while the moon is flying back from the result screen.
   if (stage === "intro" && !moonReturning) return null;
@@ -198,12 +155,20 @@ export default function MoonLayer({
   return (
     <div className={styles.overlay} aria-hidden="true">
       <div ref={moonWrapRef} className={styles.moonWrap}>
-        <div className={styles.moon}>
-          <div
-            ref={moonCutRef}
-            className={`${styles.moonCut} ${orbiting ? styles.orbiting : ""}`}
-          />
-        </div>
+        <svg className={styles.moonSvg} viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <mask id="ml-crescent">
+              <circle cx="60" cy="60" r="60" fill="white" />
+              <circle
+                ref={moonCutRef}
+                className={orbiting ? styles.orbiting : ""}
+                cx="69" cy="37" r="48"
+                fill="black"
+              />
+            </mask>
+          </defs>
+          <circle cx="60" cy="60" r="60" fill="#e8d5a3" mask="url(#ml-crescent)" />
+        </svg>
       </div>
     </div>
   );

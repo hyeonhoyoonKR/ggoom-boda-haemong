@@ -111,7 +111,7 @@ export default function StarBackground() {
         const r = s.size * 3.5;
         const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
         grad.addColorStop(0, `rgba(232,213,163,${s.alpha})`);
-        grad.addColorStop(1, `rgba(232,213,163,0)`);
+        grad.addColorStop(1, `rgba(232,213,163,${s.alpha})`);
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
         ctx.fillStyle = grad;

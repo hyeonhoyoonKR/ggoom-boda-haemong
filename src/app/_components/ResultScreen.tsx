@@ -26,22 +26,39 @@ export default function ResultScreen({
     if (!captureRef.current) return;
     const html2canvas = (await import("html2canvas")).default;
     const el = captureRef.current;
-    // The sentinel moon is hidden on screen (MoonLayer draws the visible moon,
-    // but it lives outside captureRef so html2canvas can't see it). Reveal the
-    // sentinel replica only for the capture, then hide it again.
     const sentinel = moonSentinelRef.current;
+
+    // Reveal sentinel before cloning so the clone inherits it
     if (sentinel) sentinel.style.visibility = "visible";
+
+    // Clone off-screen: user sees no layout shift
+    const clone = el.cloneNode(true) as HTMLDivElement;
+    clone.style.cssText = `position:fixed;left:-9999px;top:0;width:${el.offsetWidth}px;pointer-events:none;`;
+    document.body.appendChild(clone);
+
+    const fix = (cls: string, overrides: Partial<CSSStyleDeclaration>) =>
+      clone.querySelectorAll(`.${cls}`).forEach(e => Object.assign((e as HTMLElement).style, overrides));
+
+    // html2canvas ignores CSS animation forwards fill → force final state
+    fix(styles.resultField, { animation: "none", opacity: "1", transform: "none", height: "auto", overflow: "visible" });
+    fix(styles.analysis,    { animation: "none", opacity: "1", overflow: "visible", flex: "none" });
+    fix(styles.elementsRow, { animation: "none", opacity: "1", transform: "none" });
+    fix(styles.goodField,   { height: "auto", overflow: "visible" });
+    fix(styles.badField,    { height: "auto", overflow: "visible" });
+    fix(styles.fieldText,   { overflow: "visible" });
+
     let canvas;
     try {
-      canvas = await html2canvas(el, {
+      canvas = await html2canvas(clone, {
         backgroundColor: "#0d1b3e",
         scale: 2,
-        width: el.offsetWidth,
-        height: el.offsetHeight,
+        width: clone.offsetWidth,
+        height: clone.offsetHeight,
         x: 0,
         y: 0,
       });
     } finally {
+      document.body.removeChild(clone);
       if (sentinel) sentinel.style.visibility = "";
     }
     const link = document.createElement("a");

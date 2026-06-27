@@ -2,7 +2,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,8 +17,6 @@
   gap: 12px;
   padding: 40px 16px;
   width: 100%;
-  /* opacity-only fade (no translateY) so the moon sentinel stays put and the
-     MoonLayer moon lands exactly on it instead of 12px low */
   animation: contentFade 0.45s ease;
 }
 
@@ -69,12 +67,17 @@
 .resultField {
   width: 100%;
   max-width: 528px;
+  height: 360px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: rgba(232, 213, 163, 0.05);
   border: 1px solid rgba(232, 213, 163, 0.2);
   border-radius: 16px;
   padding: 28px 24px;
   opacity: 0;
-  animation: fadeIn 0.6s ease 2s forwards;
+  animation: fadeIn 0.6s ease 0.3s forwards;
+  box-sizing: border-box;
 }
 
 .summary {
@@ -90,9 +93,18 @@
 }
 
 .analysis {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.analysis::-webkit-scrollbar {
+  display: none;
 }
 
 .analysis p {
@@ -108,14 +120,19 @@
   max-width: 528px;
   display: flex;
   opacity: 0;
-  animation: fadeIn 0.6s ease 2.15s forwards;
+  animation: fadeIn 0.6s ease 0.35s forwards;
 }
 
 .goodField,
 .badField {
   flex: 1;
+  height: 115px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 18px 16px;
   border: 1px solid rgba(232, 213, 163, 0.2);
+  box-sizing: border-box;
 }
 
 .goodField {
@@ -140,11 +157,20 @@
 }
 
 .fieldText {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   margin: 0;
   font-size: 1rem;
   color: rgba(232, 213, 163, 0.85);
   line-height: 1.8;
   font-family: 'GyeonggiMillenniumBackground', serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.fieldText::-webkit-scrollbar {
+  display: none;
 }
 
 .actions {
@@ -153,7 +179,7 @@
   gap: 8px;
   margin-top: 8px;
   opacity: 0;
-  animation: fadeIn 0.6s ease 2.3s forwards;
+  animation: fadeIn 0.6s ease 0.6s forwards;
 }
 
 .resetBtn {
