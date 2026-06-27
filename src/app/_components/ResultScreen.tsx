@@ -23,6 +23,13 @@ export default function ResultScreen({
   const captureRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+
   const handleCopy = async () => {
     const text = `${summary}\n\n${analysis}\n\n좋은요소: ${goodElements ?? ""}\n\n나쁜요소: ${badElements ?? ""}`;
     try {
@@ -46,26 +53,58 @@ export default function ResultScreen({
     }
   };
 
+  const handleFeedbackSubmit = async () => {
+    if (!rating || feedbackLoading) return;
+    setFeedbackLoading(true);
+    try {
+      await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, comment }),
+      });
+      setFeedbackSent(true);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
   const handleDownload = async () => {
     if (!captureRef.current) return;
     const html2canvas = (await import("html2canvas")).default;
     const el = captureRef.current;
-    // The sentinel moon is hidden on screen (MoonLayer draws the visible moon,
-    // but it lives outside captureRef so html2canvas can't see it). Reveal the
-    // sentinel replica only for the capture, then hide it again.
     const sentinel = moonSentinelRef.current;
+
+    // Reveal sentinel before cloning so the clone inherits it
     if (sentinel) sentinel.style.visibility = "visible";
+
+    // Clone off-screen: user sees no layout shift
+    const clone = el.cloneNode(true) as HTMLDivElement;
+    clone.style.cssText = `position:fixed;left:-9999px;top:0;width:${el.offsetWidth}px;pointer-events:none;`;
+    document.body.appendChild(clone);
+
+    const fix = (cls: string, overrides: Partial<CSSStyleDeclaration>) =>
+      clone.querySelectorAll(`.${cls}`).forEach(e => Object.assign((e as HTMLElement).style, overrides));
+
+    // html2canvas ignores CSS animation forwards fill → force final state
+    fix(styles.resultField, { animation: "none", opacity: "1", transform: "none", height: "auto", overflow: "visible" });
+    fix(styles.analysis,    { animation: "none", opacity: "1", overflow: "visible", flex: "none" });
+    fix(styles.elementsRow, { animation: "none", opacity: "1", transform: "none" });
+    fix(styles.goodField,   { height: "auto", overflow: "visible" });
+    fix(styles.badField,    { height: "auto", overflow: "visible" });
+    fix(styles.fieldText,   { overflow: "visible" });
+
     let canvas;
     try {
-      canvas = await html2canvas(el, {
+      canvas = await html2canvas(clone, {
         backgroundColor: "#0d1b3e",
         scale: 2,
-        width: el.offsetWidth,
-        height: el.offsetHeight,
+        width: clone.offsetWidth,
+        height: clone.offsetHeight,
         x: 0,
         y: 0,
       });
     } finally {
+      document.body.removeChild(clone);
       if (sentinel) sentinel.style.visibility = "";
     }
     const link = document.createElement("a");
@@ -108,8 +147,11 @@ export default function ResultScreen({
           <button className={styles.resetBtn} onClick={onReset}>
             다시 입력하기
           </button>
-          {/* TODO: 의견 보내기 기능은 추후 구현 */}
-          <button className={styles.feedbackBtn} type="button">
+          <button
+            className={styles.feedbackBtn}
+            type="button"
+            onClick={() => setShowFeedback(true)}
+          >
             의견 보내기
           </button>
           <button
@@ -167,6 +209,49 @@ export default function ResultScreen({
           </button>
         </div>
       </div>
+      {showFeedback && (
+        <div className={styles.modalOverlay} onClick={() => setShowFeedback(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            {feedbackSent ? (
+              <p className={styles.modalThanks}>의견을 보내주셔서 감사합니다 🙏</p>
+            ) : (
+              <>
+                <h4 className={styles.modalTitle}>해몽이 마음에 드셨나요?</h4>
+                <div className={styles.stars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      className={styles.star}
+                      type="button"
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setRating(star)}
+                      aria-label={`${star}점`}
+                    >
+                      {star <= (hoverRating || rating) ? "★" : "☆"}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  className={styles.modalTextarea}
+                  placeholder="한줄 의견 (선택사항)"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  maxLength={200}
+                />
+                <button
+                  className={styles.modalSubmit}
+                  type="button"
+                  onClick={handleFeedbackSubmit}
+                  disabled={!rating || feedbackLoading}
+                >
+                  {feedbackLoading ? "보내는 중..." : "보내기"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
