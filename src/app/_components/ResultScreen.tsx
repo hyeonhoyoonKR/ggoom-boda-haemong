@@ -74,10 +74,8 @@ export default function ResultScreen({
     const el = captureRef.current;
     const sentinel = moonSentinelRef.current;
 
-    // Reveal sentinel before cloning so the clone inherits it
     if (sentinel) sentinel.style.visibility = "visible";
 
-    // Clone off-screen: user sees no layout shift
     const clone = el.cloneNode(true) as HTMLDivElement;
     clone.style.cssText = `position:fixed;left:-9999px;top:0;width:${el.offsetWidth}px;pointer-events:none;`;
     document.body.appendChild(clone);
@@ -85,7 +83,6 @@ export default function ResultScreen({
     const fix = (cls: string, overrides: Partial<CSSStyleDeclaration>) =>
       clone.querySelectorAll(`.${cls}`).forEach(e => Object.assign((e as HTMLElement).style, overrides));
 
-    // html2canvas ignores CSS animation forwards fill → force final state
     fix(styles.resultField, { animation: "none", opacity: "1", transform: "none", height: "auto", overflow: "visible" });
     fix(styles.analysis,    { animation: "none", opacity: "1", overflow: "visible", flex: "none" });
     fix(styles.elementsRow, { animation: "none", opacity: "1", transform: "none" });
@@ -93,10 +90,10 @@ export default function ResultScreen({
     fix(styles.badField,    { height: "auto", overflow: "visible" });
     fix(styles.fieldText,   { overflow: "visible" });
 
-    let canvas;
+    let contentCanvas;
     try {
-      canvas = await html2canvas(clone, {
-        backgroundColor: "#0d1b3e",
+      contentCanvas = await html2canvas(clone, {
+        backgroundColor: null,
         scale: 2,
         width: clone.offsetWidth,
         height: clone.offsetHeight,
@@ -107,9 +104,54 @@ export default function ResultScreen({
       document.body.removeChild(clone);
       if (sentinel) sentinel.style.visibility = "";
     }
+
+    const PAD = 96; // canvas px (= 48 CSS px at scale 2)
+    const finalW = contentCanvas.width + PAD * 2;
+    const finalH = contentCanvas.height + PAD * 2;
+
+    const final = document.createElement("canvas");
+    final.width = finalW;
+    final.height = finalH;
+    const ctx = final.getContext("2d")!;
+
+    // Diagonal night-sky gradient (matches page background)
+    const grad = ctx.createLinearGradient(0, 0, finalW, finalH);
+    grad.addColorStop(0,    "#0a1628");
+    grad.addColorStop(0.4,  "#122050");
+    grad.addColorStop(0.65, "#0d1f4a");
+    grad.addColorStop(1,    "#091220");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, finalW, finalH);
+
+    // Stars
+    const STARS = [
+      [0.05,0.08,4.4,0.7],[0.12,0.22,3.2,0.45],[0.19,0.05,4.0,0.6],
+      [0.28,0.15,2.4,0.35],[0.35,0.03,5.2,0.8],[0.42,0.18,2.8,0.4],
+      [0.5,0.07,3.6,0.55],[0.58,0.25,2.4,0.3],[0.65,0.11,4.4,0.65],
+      [0.72,0.04,3.2,0.5],[0.8,0.19,4.0,0.6],[0.88,0.09,2.8,0.4],
+      [0.94,0.23,4.8,0.75],[0.03,0.45,3.6,0.5],[0.15,0.6,2.4,0.3],
+      [0.25,0.38,3.2,0.45],[0.38,0.55,2.8,0.35],[0.48,0.42,4.4,0.7],
+      [0.6,0.5,2.4,0.3],[0.7,0.35,3.6,0.55],[0.82,0.48,2.8,0.4],
+      [0.92,0.4,4.0,0.6],[0.07,0.75,3.2,0.45],[0.18,0.88,2.4,0.3],
+      [0.3,0.72,4.8,0.7],[0.44,0.85,2.8,0.4],[0.55,0.78,3.6,0.5],
+      [0.68,0.92,2.4,0.3],[0.78,0.68,4.0,0.6],[0.9,0.82,3.2,0.45],
+      [0.96,0.55,2.8,0.35],[0.02,0.92,3.6,0.5],[0.22,0.5,2.4,0.3],
+      [0.45,0.65,3.2,0.45],[0.62,0.72,4.4,0.65],[0.85,0.3,2.8,0.4],
+      [0.1,0.35,4.0,0.6],[0.33,0.28,2.4,0.3],[0.75,0.6,3.6,0.5],
+    ];
+    for (const [rx, ry, r, a] of STARS) {
+      ctx.beginPath();
+      ctx.arc(rx * finalW, ry * finalH, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(232,213,163,${a})`;
+      ctx.fill();
+    }
+
+    // Content on top
+    ctx.drawImage(contentCanvas, PAD, PAD);
+
     const link = document.createElement("a");
     link.download = "해몽결과.png";
-    link.href = canvas.toDataURL("image/png");
+    link.href = final.toDataURL("image/png");
     link.click();
   };
 
@@ -120,7 +162,15 @@ export default function ResultScreen({
           {/* Sentinel: positions MoonLayer moon + provides moon replica for download */}
           <div ref={moonSentinelRef} className={styles.moonBlock}>
             <div className={styles.moon}>
-              <div className={styles.moonCut} />
+              <svg className={styles.moonSvg} viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <mask id="result-crescent">
+                    <circle cx="30" cy="30" r="30" fill="white" />
+                    <circle cx="34" cy="18" r="24" fill="black" />
+                  </mask>
+                </defs>
+                <circle cx="30" cy="30" r="30" fill="#e8d5a3" mask="url(#result-crescent)" />
+              </svg>
             </div>
           </div>
           <div className={styles.resultField}>
@@ -145,7 +195,7 @@ export default function ResultScreen({
 
         <div className={styles.actions}>
           <button className={styles.resetBtn} onClick={onReset}>
-            다시 입력하기
+            처음으로
           </button>
           <button
             className={styles.feedbackBtn}

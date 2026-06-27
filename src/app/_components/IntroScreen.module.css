@@ -21,6 +21,7 @@
   width: 100%;
   max-width: 560px;
   padding: 0 40px;
+  transition: transform 0.25s ease;
 }
 
 .left {

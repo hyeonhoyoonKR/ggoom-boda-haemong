@@ -49,19 +49,13 @@
 .moon {
   width: 60px;
   height: 60px;
-  background: #e8d5a3;
-  border-radius: 50%;
   position: relative;
 }
 
-.moonCut {
-  width: 48px;
-  height: 48px;
-  background: #0d1b3e;
-  border-radius: 50%;
-  position: absolute;
-  top: -6px;
-  left: 10px;
+.moonSvg {
+  width: 60px;
+  height: 60px;
+  display: block;
 }
 
 .resultField {
@@ -81,7 +75,7 @@
 }
 
 .summary {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: normal;
   color: #e8d5a3;
   margin: 0 0 16px;
@@ -161,7 +155,7 @@
   min-height: 0;
   overflow-y: auto;
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.82rem;
   color: rgba(232, 213, 163, 0.85);
   line-height: 1.8;
   font-family: 'GyeonggiMillenniumBackground', serif;
