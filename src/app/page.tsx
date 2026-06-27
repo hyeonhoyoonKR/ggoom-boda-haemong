@@ -70,7 +70,7 @@ export default function Home() {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#0d1b3e" }}>
+    <div style={{ position: "fixed", inset: 0, background: "linear-gradient(135deg, #0a1628 0%, #122050 40%, #0d1f4a 65%, #091220 100%)" }}>
       <StarBackground />
       <MoonLayer
         stage={stage}
