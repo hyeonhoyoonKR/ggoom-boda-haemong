@@ -28,7 +28,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
   const [exiting, setExiting] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [db, setdb] = useState(0);
+//   const [db, setdb] = useState(0);
 
   useEffect(() => { inputModeRef.current = inputMode; }, [inputMode]);
 
@@ -44,7 +44,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
 
     const update = () => {
       const keyboardHeight = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
-      setdb(keyboardHeight);
+    //   setdb(keyboardHeight);
       el.style.transform = keyboardHeight > 80 ? `translateY(-${keyboardHeight / 2}px)` : "";
     };
     const ta = textareaRef.current;
@@ -244,7 +244,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
                 </svg>
               </button>
             </div>
-            <div>{db}</div>
+            {/* <div>{db}</div> */}
           </div>
         </div>
       </div>
