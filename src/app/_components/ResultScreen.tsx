@@ -31,7 +31,7 @@ export default function ResultScreen({
   const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const handleCopy = async () => {
-    const text = `${summary}\n\n${analysis}\n\n좋은요소: ${goodElements ?? ""}\n\n나쁜요소: ${badElements ?? ""}\n\n무료 꿈 해몽 받기 [ haemong.org ]`;
+    const text = `${summary}\n\n${analysis}\n\n좋은요소: ${goodElements ?? ""}\n\n나쁜요소: ${badElements ?? ""}`;
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
@@ -149,12 +149,6 @@ export default function ResultScreen({
     // Content on top
     ctx.drawImage(contentCanvas, PAD, PAD);
 
-    // Footer text
-    ctx.font = "24px 'GyeonggiMillenniumBackground', serif";
-    ctx.fillStyle = "rgba(232,213,163,0.45)";
-    ctx.textAlign = "center";
-    ctx.fillText("무료 꿈 해몽 받기 : haemong.org", finalW / 2, finalH - 32);
-
     const link = document.createElement("a");
     link.download = "해몽결과.png";
     link.href = final.toDataURL("image/png");
@@ -168,7 +162,15 @@ export default function ResultScreen({
           {/* Sentinel: positions MoonLayer moon + provides moon replica for download */}
           <div ref={moonSentinelRef} className={styles.moonBlock}>
             <div className={styles.moon}>
-              <div className={styles.moonCut} />
+              <svg className={styles.moonSvg} viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <mask id="result-crescent">
+                    <circle cx="30" cy="30" r="30" fill="white" />
+                    <circle cx="34" cy="18" r="24" fill="black" />
+                  </mask>
+                </defs>
+                <circle cx="30" cy="30" r="30" fill="#e8d5a3" mask="url(#result-crescent)" />
+              </svg>
             </div>
           </div>
           <div className={styles.resultField}>
