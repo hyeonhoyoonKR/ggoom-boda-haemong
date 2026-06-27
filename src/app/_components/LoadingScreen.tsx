@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import styles from "./LoadingScreen.module.css";
 
 interface Props {
@@ -7,15 +8,16 @@ interface Props {
 }
 
 export default function LoadingScreen({ isLoading }: Props) {
+  const [stopping, setStopping] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) setStopping(true);
+  }, [isLoading]);
+
   return (
     <div className={styles.wrap}>
-      <div className={styles.moonBlock}>
-        <div className={styles.moon}>
-          <div className={`${styles.moonCut} ${styles.orbiting}`} />
-        </div>
-      </div>
-      <p className={styles.hint}>
-        {isLoading ? "해몽 중..." : "잠시만 기다려 주세요"}
+      <p className={`${styles.hint} ${stopping ? styles.hintFade : ""}`}>
+        해몽 중...
       </p>
     </div>
   );
