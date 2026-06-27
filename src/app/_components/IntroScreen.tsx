@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturning = false }: Props) {
+  const contentRef = useRef<HTMLDivElement>(null);
   const moonParallaxRef = useRef<HTMLDivElement>(null);
   const internalMoonRef = useRef<HTMLDivElement>(null);
   const moonRef = moonRefProp ?? internalMoonRef;
@@ -27,8 +28,39 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
   const [exiting, setExiting] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [db, setdb] = useState(0);
 
   useEffect(() => { inputModeRef.current = inputMode; }, [inputMode]);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = contentRef.current;
+    if (!vv || !el) return;
+
+    if (!inputMode) {
+      el.style.transform = "";
+      return;
+    }
+
+    const update = () => {
+      const keyboardHeight = Math.max(0, window.innerHeight - vv.offsetTop - vv.height);
+      setdb(keyboardHeight);
+      el.style.transform = keyboardHeight > 80 ? `translateY(-${keyboardHeight / 2}px)` : "";
+    };
+    const ta = textareaRef.current;
+    // Poll at multiple points during keyboard animation (visualViewport.resize
+    // sometimes skips on re-focus of the same textarea on iOS)
+    const onFocus = () => [50, 150, 300, 500].forEach(d => setTimeout(update, d));
+
+    vv.addEventListener("resize", update);
+    ta?.addEventListener("focus", onFocus);
+    update();
+    return () => {
+      vv.removeEventListener("resize", update);
+      ta?.removeEventListener("focus", onFocus);
+      if (contentRef.current) contentRef.current.style.transform = "";
+    };
+  }, [inputMode]);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
@@ -129,7 +161,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
 
   return (
     <div className={styles.wrap} onClick={handleWrapClick}>
-      <div className={styles.content}>
+      <div ref={contentRef} className={styles.content}>
         <div className={styles.left}>
           <div
             className={`${styles.moonWrap} ${exiting || inputMode ? styles.moonMoved : ""}`}
@@ -181,6 +213,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
               <textarea
                 ref={textareaRef}
                 className={styles.dreamInput}
+                suppressHydrationWarning
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -211,6 +244,7 @@ export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturn
                 </svg>
               </button>
             </div>
+            <div>{db}</div>
           </div>
         </div>
       </div>
