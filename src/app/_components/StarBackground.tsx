@@ -16,19 +16,27 @@ export default function StarBackground() {
     let logicalW = 0;
     let logicalH = 0;
     let stars: {
-      x: number; y: number;
-      deltax: number; deltay: number;
-      vx: number; vy: number;
-      size: number; alpha: number; target: number;
-      base: number; twinkleSpeed: number; twinkleDir: number;
-      depth: number; floatPhase: number;
+      x: number;
+      y: number;
+      deltax: number;
+      deltay: number;
+      vx: number;
+      vy: number;
+      size: number;
+      alpha: number;
+      target: number;
+      base: number;
+      twinkleSpeed: number;
+      twinkleDir: number;
+      depth: number;
+      floatPhase: number;
     }[] = [];
     const mouse = { x: -9999, y: -9999 };
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      logicalW = canvas.offsetWidth;
-      logicalH = canvas.offsetHeight;
+      logicalW = window.innerWidth;
+      logicalH = window.innerHeight;
       canvas.width = logicalW * dpr;
       canvas.height = logicalH * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -42,7 +50,8 @@ export default function StarBackground() {
         stars.push({
           x: Math.random() * logicalW,
           y: Math.random() * logicalH,
-          deltax: 0, deltay: 0,
+          deltax: 0,
+          deltay: 0,
           vx: (Math.random() - 0.5) * 0.18,
           vy: (Math.random() - 0.5) * 0.08,
           size: Math.random() * 0.4 + 0.2,
@@ -62,7 +71,10 @@ export default function StarBackground() {
       ctx.clearRect(0, 0, logicalW, logicalH);
       stars.forEach((s) => {
         s.alpha += s.twinkleSpeed * s.twinkleDir;
-        if (s.alpha >= s.target) { s.alpha = s.target; s.twinkleDir = -1; }
+        if (s.alpha >= s.target) {
+          s.alpha = s.target;
+          s.twinkleDir = -1;
+        }
         if (s.alpha <= s.base * 0.3) {
           s.alpha = s.base * 0.3;
           s.twinkleDir = 1;
@@ -84,8 +96,8 @@ export default function StarBackground() {
         if (dist < maxDist && dist > 0) {
           const proximity = 1 - dist / maxDist;
           const force = proximity * s.depth;
-          s.deltax += (-(dx / dist) * force * 100 * s.size - s.deltax) * 0.1;
-          s.deltay += (-(dy / dist) * force * 100 * s.size - s.deltay) * 0.1;
+          s.deltax += (-(dx / dist) * force * 100 * s.size - s.deltax) * 0.2;
+          s.deltay += (-(dy / dist) * force * 100 * s.size - s.deltay) * 0.2;
           s.alpha += (0.95 - s.alpha) * proximity * 0.15;
         } else {
           s.deltax += (0 - s.deltax) * 0.06;
@@ -99,6 +111,7 @@ export default function StarBackground() {
         const r = s.size * 3.5;
         const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
         grad.addColorStop(0, `rgba(232,213,163,${s.alpha})`);
+        grad.addColorStop(1, `rgba(232,213,163,0)`);
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
         ctx.fillStyle = grad;
@@ -108,28 +121,25 @@ export default function StarBackground() {
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      const r = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - r.left;
-      mouse.y = e.clientY - r.top;
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
     };
     const onMouseLeave = () => {
       mouse.x = -9999;
       mouse.y = -9999;
     };
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas.parentElement!);
+    window.addEventListener("resize", resize);
+    window.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseleave", onMouseLeave);
     resize();
     draw();
 
-    canvas.parentElement?.addEventListener("mousemove", onMouseMove);
-    canvas.parentElement?.addEventListener("mouseleave", onMouseLeave);
-
     return () => {
       cancelAnimationFrame(animId);
-      ro.disconnect();
-      canvas.parentElement?.removeEventListener("mousemove", onMouseMove);
-      canvas.parentElement?.removeEventListener("mouseleave", onMouseLeave);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
@@ -138,9 +148,14 @@ export default function StarBackground() {
       ref={canvasRef}
       style={{
         position: "absolute",
-        inset: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         width: "100%",
         height: "100%",
+        pointerEvents: "none",
+        display: "block",
       }}
     />
   );

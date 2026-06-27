@@ -5,154 +5,44 @@ import styles from "./IntroScreen.module.css";
 
 interface Props {
   onSubmit: (dreamText: string) => void;
+  /** External ref to the moon element so MoonLayer can measure its position. */
+  moonRef?: React.RefObject<HTMLDivElement | null>;
+  /** True while MoonLayer is flying back from the result screen to this moon's
+   *  spot. The intro's own moon stays hidden + entrance-less until handoff. */
+  moonReturning?: boolean;
 }
 
-export default function IntroScreen({ onSubmit }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturning = false }: Props) {
   const moonParallaxRef = useRef<HTMLDivElement>(null);
+  const internalMoonRef = useRef<HTMLDivElement>(null);
+  const moonRef = moonRefProp ?? internalMoonRef;
+  // Captured at mount: if this intro instance appeared because of a reset return,
+  // the moon must skip its fadeUp entrance and sit at the settled position so the
+  // incoming MoonLayer moon lands exactly on it (no translateY drift).
+  const skipMoonEntrance = useRef(moonReturning);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isSubmittingRef = useRef(false);
   const [inputMode, setInputMode] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number;
-    let time = 0;
-    let logicalW = 0;
-    let logicalH = 0;
-    let stars: {
-      x: number; y: number;
-      deltax: number; deltay: number;
-      vx: number; vy: number;
-      size: number; alpha: number; target: number;
-      base: number; twinkleSpeed: number; twinkleDir: number;
-      depth: number; floatPhase: number;
-    }[] = [];
-    const mouse = { x: -9999, y: -9999 };
-
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      logicalW = canvas.offsetWidth;
-      logicalH = canvas.offsetHeight;
-      canvas.width = logicalW * dpr;
-      canvas.height = logicalH * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      initStars();
-    };
-
-    const initStars = () => {
-      stars = [];
-      const count = Math.floor((logicalW * logicalH) / 2800);
-      for (let i = 0; i < count; i++) {
-        stars.push({
-          x: Math.random() * logicalW,
-          y: Math.random() * logicalH,
-          deltax: 0, deltay: 0,
-          vx: (Math.random() - 0.5) * 0.18,
-          vy: (Math.random() - 0.5) * 0.08,
-          size: Math.random() * 0.4 + 0.2,
-          base: Math.random() * 0.5 + 0.2,
-          alpha: Math.random() * 0.4 + 0.15,
-          target: Math.random() * 0.6 + 0.25,
-          twinkleSpeed: Math.random() * 0.008 + 0.003,
-          twinkleDir: Math.random() > 0.5 ? 1 : -1,
-          depth: Math.random() * 0.6 + 0.2,
-          floatPhase: Math.random() * Math.PI * 2,
-        });
-      }
-    };
-
-    const draw = () => {
-      time += 0.002;
-      ctx.clearRect(0, 0, logicalW, logicalH);
-      stars.forEach((s) => {
-        // 반짝임
-        s.alpha += s.twinkleSpeed * s.twinkleDir;
-        if (s.alpha >= s.target) { s.alpha = s.target; s.twinkleDir = -1; }
-        if (s.alpha <= s.base * 0.3) {
-          s.alpha = s.base * 0.3;
-          s.twinkleDir = 1;
-          s.target = Math.random() * 0.6 + 0.25;
-        }
-
-        // 자율 이동 + 화면 경계 랩
-        s.x += s.vx;
-        s.y += s.vy;
-        if (s.x < -20) s.x = logicalW + 10;
-        if (s.x > logicalW + 20) s.x = -10;
-        if (s.y < -20) s.y = logicalH + 10;
-        if (s.y > logicalH + 20) s.y = -10;
-
-        // 마우스 반발
-        const dx = mouse.x - (s.x + s.deltax);
-        const dy = mouse.y - (s.y + s.deltay);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const maxDist = 130;
-
-        if (dist < maxDist && dist > 0) {
-          const proximity = 1 - dist / maxDist;
-          const force = proximity * s.depth;
-          s.deltax += (-(dx / dist) * force * 100 * s.size - s.deltax) * 0.1;
-          s.deltay += (-(dy / dist) * force * 100 * s.size - s.deltay) * 0.1;
-          s.alpha += (0.95 - s.alpha) * proximity * 0.15;
-        } else {
-          s.deltax += (0 - s.deltax) * 0.06;
-          s.deltay += (0 - s.deltay) * 0.06;
-        }
-
-        const floatY = Math.sin(time + s.floatPhase) * 2;
-        const px = s.x + s.deltax;
-        const py = s.y + s.deltay + floatY;
-
-        // radial gradient로 부드러운 빛 번짐
-        const r = s.size * 3.5;
-        const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
-        grad.addColorStop(0,   `rgba(232,213,163,${s.alpha})`);
-        // grad.addColorStop(0.3, `rgba(232,213,163,${s.alpha * 0.55})`);
-        // grad.addColorStop(1,   `rgba(232,213,163,0)`);
-        ctx.beginPath();
-        ctx.arc(px, py, r, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-      });
-      animId = requestAnimationFrame(draw);
-    };
-
     const onMouseMove = (e: MouseEvent) => {
-      const r = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - r.left;
-      mouse.y = e.clientY - r.top;
-      if (moonParallaxRef.current) {
-        const mx = ((mouse.x / logicalW) - 0.5) * -20;
-        const my = ((mouse.y / logicalH) - 0.5) * -20;
-        moonParallaxRef.current.style.transform = `translate(${mx}px, ${my}px)`;
-      }
+      if (isSubmittingRef.current || !moonParallaxRef.current) return;
+      const mx = (e.clientX / window.innerWidth - 0.5) * -20;
+      const my = (e.clientY / window.innerHeight - 0.5) * -20;
+      moonParallaxRef.current.style.transform = `translate(${mx}px, ${my}px)`;
     };
     const onMouseLeave = () => {
-      mouse.x = -9999; mouse.y = -9999;
-      if (moonParallaxRef.current) {
-        moonParallaxRef.current.style.transform = "translate(0px, 0px)";
-      }
+      if (isSubmittingRef.current || !moonParallaxRef.current) return;
+      moonParallaxRef.current.style.transform = "translate(0px, 0px)";
     };
-
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas.parentElement!);
-    resize();
-    draw();
-
-    canvas.parentElement?.addEventListener("mousemove", onMouseMove);
-    canvas.parentElement?.addEventListener("mouseleave", onMouseLeave);
-
+    window.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseleave", onMouseLeave);
     return () => {
-      cancelAnimationFrame(animId);
-      ro.disconnect();
-      canvas.parentElement?.removeEventListener("mousemove", onMouseMove);
-      canvas.parentElement?.removeEventListener("mouseleave", onMouseLeave);
+      window.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
@@ -161,8 +51,20 @@ export default function IntroScreen({ onSubmit }: Props) {
       if (e.target instanceof HTMLTextAreaElement) return;
       if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
         setExiting(true);
+        e.preventDefault();
+
         textareaRef.current?.focus();
-        setTimeout(() => { setInputMode(true); setExiting(false); }, 350);
+        setTimeout(() => {
+          setInputMode(true);
+          setExiting(false);
+          const el = textareaRef.current;
+          if (el && e.key.length === 1) {
+            const start = el.selectionStart ?? el.value.length;
+            const end = el.selectionEnd ?? el.value.length;
+            el.setRangeText(e.key, start, end, "end");
+            el.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }, 350);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -179,40 +81,101 @@ export default function IntroScreen({ onSubmit }: Props) {
     }
   }, [inputMode]);
 
-  return (
-    <div className={styles.wrap}>
-      <canvas ref={canvasRef} className={styles.canvas} />
+  const doSubmit = (dream: string) => {
+    if (!dream.trim() || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setSubmitting(true);
 
+    const moonEl = moonRef.current;
+    if (!moonEl) {
+      onSubmit(dream);
+      return;
+    }
+
+    const rect = moonEl.getBoundingClientRect();
+    const dx = window.innerWidth / 2 - (rect.left + rect.width / 2);
+    const dy = window.innerHeight / 2 - (rect.top + rect.height / 2);
+    const scale = 120 / 52;
+
+    // .moon has no CSS animation, so JS transition works without conflict
+    moonEl.style.transition = "none";
+    moonEl.style.transform = "translate(0, 0) scale(1)";
+    void moonEl.getBoundingClientRect();
+
+    requestAnimationFrame(() => {
+      moonEl.style.transition = "transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)";
+      moonEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+    });
+
+    moonEl.addEventListener(
+      "transitionend",
+      () => setTimeout(() => onSubmit(dream), 100),
+      { once: true },
+    );
+  };
+
+  const handleWrapClick = () => {
+    if (inputMode || exiting || submitting) return;
+    setExiting(true);
+    textareaRef.current?.focus();
+    setTimeout(() => {
+      setInputMode(true);
+      setExiting(false);
+    }, 350);
+  };
+
+  return (
+    <div className={styles.wrap} onClick={handleWrapClick}>
       <div className={styles.content}>
         <div className={styles.left}>
-          <div className={`${styles.moonWrap} ${(exiting || inputMode) ? styles.moonMoved : ''}`}>
-          <div ref={moonParallaxRef} className={styles.moonParallax}>
-            <div className={styles.moonBlock}>
-              <div className={styles.moon}>
-                <div className={styles.moonCut} />
+          <div
+            className={`${styles.moonWrap} ${exiting || inputMode ? styles.moonMoved : ""}`}
+          >
+            <div ref={moonParallaxRef} className={styles.moonParallax}>
+              <div
+                className={`${styles.moonBlock} ${
+                  skipMoonEntrance.current ? styles.moonSettled : ""
+                } ${moonReturning ? styles.moonHidden : ""}`}
+              >
+                <div ref={moonRef} className={styles.moon}>
+                  <div className={styles.moonCut} />
+                </div>
               </div>
             </div>
           </div>
-          </div>
           <div className={styles.textGroup}>
-            <div className={`${styles.staticContent} ${(exiting || inputMode) ? styles.staticGone : ''}`}>
+            <div
+              className={`${styles.staticContent} ${exiting || inputMode ? styles.staticGone : ""}`}
+            >
               <h1 className={styles.title}>꿈해몽</h1>
               <div className={styles.divider} />
               <p className={styles.subtitle}>
-                수천 년의 해몽 전통과 현대 심리학이<br />
-                당신의 꿈이 전하는 말을 읽어드립니다.
+                {/* 수천 년의 해몽 전통과 현대 심리학이<br />
+                당신의 꿈이 전하는 말을 읽어드립니다. */}
+                화면을 클릭해주세요
               </p>
             </div>
-            <div className={`${styles.dreamInputWrap} ${inputMode ? styles.dreamInputVisible : ''}`}>
+            <div
+              className={`${styles.dreamInputWrap} ${inputMode ? styles.dreamInputVisible : ""}`}
+              style={
+                submitting
+                  ? {
+                      opacity: 0,
+                      pointerEvents: "none",
+                      transition: "opacity 0.25s ease",
+                    }
+                  : {}
+              }
+            >
               <textarea
                 ref={textareaRef}
                 className={styles.dreamInput}
                 value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    if (inputValue.trim()) onSubmit(inputValue.trim());
+                    doSubmit(inputValue.trim());
                   }
                 }}
                 placeholder="꿈의 내용을 입력해주세요..."
@@ -221,16 +184,24 @@ export default function IntroScreen({ onSubmit }: Props) {
               <button
                 type="button"
                 className={styles.submitArrow}
-                onClick={() => { if (inputValue.trim()) onSubmit(inputValue.trim()); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  doSubmit(inputValue.trim());
+                }}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8h10M9 4l4 4-4 4" stroke="#e8d5a3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="#e8d5a3"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

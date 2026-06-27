@@ -1,77 +1,42 @@
 .wrap {
   position: relative;
   width: 100%;
-  height: 100vh;
-  background: #0d1b3e;
+  height: 100%;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 40px;
-  animation: fadeIn 0.45s ease;
+.hintFade {
+  animation: hintOut 0.25s ease forwards;
 }
 
-.moonBlock {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 달 본체: 120x120 */
-.moon {
-  width: 120px;
-  height: 120px;
-  background: #e8d5a3;
-  border-radius: 50%;
-  position: relative;
-}
-
-/*
-  moonCut: 96x96, top:-11, left:21
-  달 중심(60,60) 기준으로 moonCut 좌표계에서의 pivot:
-    x = 60 - 21 = 39px
-    y = 60 - (-11) = 71px
-  → transform-origin: 39px 71px
-*/
-.moonCut {
-  width: 96px;
-  height: 96px;
-  background: #0d1b3e;
-  border-radius: 50%;
-  position: absolute;
-  top: -11px;
-  left: 21px;
-  transform-origin: 39px 71px;
-  animation: orbitMoon 3s linear infinite;
-}
-
-@keyframes orbitMoon {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+@keyframes hintOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 .hint {
+  position: absolute;
+  top: calc(50% + 100px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   font-size: 0.9rem;
   color: rgba(232, 213, 163, 0.5);
   letter-spacing: 0.1em;
   font-family: 'GyeonggiMillenniumBackground', serif;
-  animation: pulse 2s ease-in-out infinite;
+  opacity: 0;
+  animation: hintIn 0.4s ease 0.75s forwards, pulse 2s ease-in-out 1.15s infinite;
+}
+
+@keyframes hintIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
