@@ -87,7 +87,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "꿈의 내용을 입력해주세요." }, { status: 400 });
     }
 
-    const systemPrompt = `You are a Korean dream interpretation expert. 
+    const systemPrompt = `You are a Korean dream interpretation expert.
 
 CRITICAL: Your entire response must be written in pure Korean Hangul (한글) only.
 Do NOT use Chinese characters, Japanese characters, or English in the response content.

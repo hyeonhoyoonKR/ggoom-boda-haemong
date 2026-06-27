@@ -5,11 +5,21 @@ import styles from "./IntroScreen.module.css";
 
 interface Props {
   onSubmit: (dreamText: string) => void;
+  /** External ref to the moon element so MoonLayer can measure its position. */
+  moonRef?: React.RefObject<HTMLDivElement | null>;
+  /** True while MoonLayer is flying back from the result screen to this moon's
+   *  spot. The intro's own moon stays hidden + entrance-less until handoff. */
+  moonReturning?: boolean;
 }
 
-export default function IntroScreen({ onSubmit }: Props) {
+export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturning = false }: Props) {
   const moonParallaxRef = useRef<HTMLDivElement>(null);
-  const moonRef = useRef<HTMLDivElement>(null);
+  const internalMoonRef = useRef<HTMLDivElement>(null);
+  const moonRef = moonRefProp ?? internalMoonRef;
+  // Captured at mount: if this intro instance appeared because of a reset return,
+  // the moon must skip its fadeUp entrance and sit at the settled position so the
+  // incoming MoonLayer moon lands exactly on it (no translateY drift).
+  const skipMoonEntrance = useRef(moonReturning);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isSubmittingRef = useRef(false);
   const [inputMode, setInputMode] = useState(false);
@@ -45,15 +55,15 @@ export default function IntroScreen({ onSubmit }: Props) {
 
         textareaRef.current?.focus();
         setTimeout(() => {
-            setInputMode(true);
-            setExiting(false); 
-            const el = textareaRef.current;
-            if (el && e.key.length === 1) {
-                const start = el.selectionStart ?? el.value.length;
-                const end = el.selectionEnd ?? el.value.length;
-                el.setRangeText(e.key, start, end, 'end');
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-            }
+          setInputMode(true);
+          setExiting(false);
+          const el = textareaRef.current;
+          if (el && e.key.length === 1) {
+            const start = el.selectionStart ?? el.value.length;
+            const end = el.selectionEnd ?? el.value.length;
+            el.setRangeText(e.key, start, end, "end");
+            el.dispatchEvent(new Event("input", { bubbles: true }));
+          }
         }, 350);
       }
     };
@@ -77,7 +87,10 @@ export default function IntroScreen({ onSubmit }: Props) {
     setSubmitting(true);
 
     const moonEl = moonRef.current;
-    if (!moonEl) { onSubmit(dream); return; }
+    if (!moonEl) {
+      onSubmit(dream);
+      return;
+    }
 
     const rect = moonEl.getBoundingClientRect();
     const dx = window.innerWidth / 2 - (rect.left + rect.width / 2);
@@ -94,41 +107,46 @@ export default function IntroScreen({ onSubmit }: Props) {
       moonEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
     });
 
-    moonEl.addEventListener("transitionend", () => setTimeout(() => onSubmit(dream), 100), { once: true });
+    moonEl.addEventListener(
+      "transitionend",
+      () => setTimeout(() => onSubmit(dream), 100),
+      { once: true },
+    );
+  };
+
+  const handleWrapClick = () => {
+    if (inputMode || exiting || submitting) return;
+    setExiting(true);
+    textareaRef.current?.focus();
+    setTimeout(() => {
+      setInputMode(true);
+      setExiting(false);
+    }, 350);
   };
 
   return (
-    <div className={styles.wrap} onClick={() => {
-        if (inputMode || exiting || submitting) return;
-        setExiting(true);
-        textareaRef.current?.focus();
-        setTimeout(() => {
-          setInputMode(true);
-          setExiting(false);
-        }, 350);
-      }}
-    >
+    <div className={styles.wrap} onClick={handleWrapClick}>
       <div className={styles.content}>
         <div className={styles.left}>
-          <div className={`${styles.moonWrap} ${(exiting || inputMode) ? styles.moonMoved : ''}`}>
-          <div ref={moonParallaxRef} className={styles.moonParallax}>
-            <div className={styles.moonBlock}>
-              <div ref={moonRef} className={styles.moon}>
-                <svg width="52" height="52" viewBox="0 0 52 52" style={{display:"block"}}>
-                  <defs>
-                    <mask id="introMoonMask">
-                      <rect width="52" height="52" fill="white"/>
-                      <circle cx="30" cy="16" r="21" fill="black"/>
-                    </mask>
-                  </defs>
-                  <circle cx="26" cy="26" r="26" fill="#e8d5a3" mask="url(#introMoonMask)"/>
-                </svg>
+          <div
+            className={`${styles.moonWrap} ${exiting || inputMode ? styles.moonMoved : ""}`}
+          >
+            <div ref={moonParallaxRef} className={styles.moonParallax}>
+              <div
+                className={`${styles.moonBlock} ${
+                  skipMoonEntrance.current ? styles.moonSettled : ""
+                } ${moonReturning ? styles.moonHidden : ""}`}
+              >
+                <div ref={moonRef} className={styles.moon}>
+                  <div className={styles.moonCut} />
+                </div>
               </div>
             </div>
           </div>
-          </div>
           <div className={styles.textGroup}>
-            <div className={`${styles.staticContent} ${(exiting || inputMode) ? styles.staticGone : ''}`}>
+            <div
+              className={`${styles.staticContent} ${exiting || inputMode ? styles.staticGone : ""}`}
+            >
               <h1 className={styles.title}>꿈해몽</h1>
               <div className={styles.divider} />
               <p className={styles.subtitle}>
@@ -138,16 +156,24 @@ export default function IntroScreen({ onSubmit }: Props) {
               </p>
             </div>
             <div
-                className={`${styles.dreamInputWrap} ${inputMode ? styles.dreamInputVisible : ''}`}
-                style={submitting ? { opacity: 0, pointerEvents: "none", transition: "opacity 0.25s ease" } : {}}
-              >
+              className={`${styles.dreamInputWrap} ${inputMode ? styles.dreamInputVisible : ""}`}
+              style={
+                submitting
+                  ? {
+                      opacity: 0,
+                      pointerEvents: "none",
+                      transition: "opacity 0.25s ease",
+                    }
+                  : {}
+              }
+            >
               <textarea
                 ref={textareaRef}
                 className={styles.dreamInput}
                 value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     doSubmit(inputValue.trim());
                   }
@@ -155,22 +181,27 @@ export default function IntroScreen({ onSubmit }: Props) {
                 placeholder="꿈의 내용을 입력해주세요..."
                 rows={8}
               />
-              <button	
+              <button
                 type="button"
                 className={styles.submitArrow}
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation();
                   doSubmit(inputValue.trim());
                 }}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3 8h10M9 4l4 4-4 4" stroke="#e8d5a3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="#e8d5a3"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </button>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

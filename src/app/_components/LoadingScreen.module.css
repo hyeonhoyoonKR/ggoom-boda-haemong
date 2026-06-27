@@ -1,23 +1,20 @@
 .wrap {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.moonBlock {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.hintFade {
+  animation: hintOut 0.25s ease forwards;
 }
 
-.moon {
-  width: 120px;
-  height: 120px;
-  position: relative;
+@keyframes hintOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 .hint {
@@ -43,4 +40,3 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 }
-
