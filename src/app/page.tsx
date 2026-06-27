@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import IntroScreen from "./_components/IntroScreen";
 import LoadingScreen from "./_components/LoadingScreen";
+import MoonLayer from "./_components/MoonLayer";
 import ResultScreen from "./_components/ResultScreen";
 import StarBackground from "./_components/StarBackground";
 
@@ -20,11 +21,17 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
+  // true while the moon is flying from the result screen back to the intro moon
+  const [moonReturning, setMoonReturning] = useState(false);
+  const moonSentinelRef = useRef<HTMLDivElement>(null);
+  const introMoonRef = useRef<HTMLDivElement>(null);
+
   const handleSubmit = async (dream: string) => {
     if (!dream.trim() || isLoading) return;
 
     setIsLoading(true);
     setError("");
+    setMoonReturning(false); // cancel any in-flight reset return
     setStage("loading");
 
     try {
@@ -36,7 +43,6 @@ export default function Home() {
         goodElements: "맑은 물, 자유로운 움직임, 부드러운 물결",
         badElements: "더러운 물, 열대 과일, 거친 수건",
       });
-      setStage("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "예기치 않은 오류가 발생했습니다.");
       setStage("intro");
@@ -45,7 +51,14 @@ export default function Home() {
     }
   };
 
+  const handleLoadingExit = () => {
+    setStage("result");
+  };
+
   const handleReset = () => {
+    // Keep MoonLayer alive and fly its moon back to the intro moon's spot,
+    // then MoonLayer hands off to IntroScreen's own moon and unmounts.
+    setMoonReturning(true);
     setStage("intro");
     setResult(null);
     setError("");
@@ -54,7 +67,22 @@ export default function Home() {
   return (
     <div style={{ position: "fixed", inset: 0, background: "#0d1b3e" }}>
       <StarBackground />
-      {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
+      <MoonLayer
+        stage={stage}
+        isLoading={isLoading}
+        onExitDone={handleLoadingExit}
+        sentinelRef={moonSentinelRef}
+        introSentinelRef={introMoonRef}
+        moonReturning={moonReturning}
+        onReturnDone={() => setMoonReturning(false)}
+      />
+      {stage === "intro" && (
+        <IntroScreen
+          onSubmit={handleSubmit}
+          moonRef={introMoonRef}
+          moonReturning={moonReturning}
+        />
+      )}
       {stage === "loading" && <LoadingScreen isLoading={isLoading} />}
       {stage === "result" && result && (
         <ResultScreen
@@ -63,6 +91,7 @@ export default function Home() {
           goodElements={result.goodElements}
           badElements={result.badElements}
           onReset={handleReset}
+          moonSentinelRef={moonSentinelRef}
         />
       )}
       {error && (
