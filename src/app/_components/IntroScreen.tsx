@@ -5,11 +5,21 @@ import styles from "./IntroScreen.module.css";
 
 interface Props {
   onSubmit: (dreamText: string) => void;
+  /** External ref to the moon element so MoonLayer can measure its position. */
+  moonRef?: React.RefObject<HTMLDivElement | null>;
+  /** True while MoonLayer is flying back from the result screen to this moon's
+   *  spot. The intro's own moon stays hidden + entrance-less until handoff. */
+  moonReturning?: boolean;
 }
 
-export default function IntroScreen({ onSubmit }: Props) {
+export default function IntroScreen({ onSubmit, moonRef: moonRefProp, moonReturning = false }: Props) {
   const moonParallaxRef = useRef<HTMLDivElement>(null);
-  const moonRef = useRef<HTMLDivElement>(null);
+  const internalMoonRef = useRef<HTMLDivElement>(null);
+  const moonRef = moonRefProp ?? internalMoonRef;
+  // Captured at mount: if this intro instance appeared because of a reset return,
+  // the moon must skip its fadeUp entrance and sit at the settled position so the
+  // incoming MoonLayer moon lands exactly on it (no translateY drift).
+  const skipMoonEntrance = useRef(moonReturning);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isSubmittingRef = useRef(false);
   const [inputMode, setInputMode] = useState(false);
@@ -122,7 +132,11 @@ export default function IntroScreen({ onSubmit }: Props) {
             className={`${styles.moonWrap} ${exiting || inputMode ? styles.moonMoved : ""}`}
           >
             <div ref={moonParallaxRef} className={styles.moonParallax}>
-              <div className={styles.moonBlock}>
+              <div
+                className={`${styles.moonBlock} ${
+                  skipMoonEntrance.current ? styles.moonSettled : ""
+                } ${moonReturning ? styles.moonHidden : ""}`}
+              >
                 <div ref={moonRef} className={styles.moon}>
                   <div className={styles.moonCut} />
                 </div>

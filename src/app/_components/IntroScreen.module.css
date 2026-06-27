@@ -42,6 +42,19 @@
   animation: fadeUp 1s ease-out 0.2s forwards;
 }
 
+/* Reset-return: sit at the settled position with no entrance so the incoming
+   MoonLayer moon lands exactly here. */
+.moonSettled {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+/* Hidden (but kept in layout) while MoonLayer is still flying in; revealed at handoff. */
+.moonHidden {
+  visibility: hidden;
+}
+
 .moon {
   width: 52px;
   height: 52px;
@@ -230,7 +243,7 @@
   border-radius: 12px;
   color: #e8d5a3;
   font-family: 'GyeonggiMillenniumBackground', serif;
-  font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+  font-size: clamp(1.02rem, 1.44vw, 1.14rem);
   line-height: 1.9;
   letter-spacing: 0.03em;
   padding: 16px 20px;
