@@ -1,12 +1,13 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@supabase/supabase-js";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
+const MODEL = "openai/gpt-oss-120b";
+
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
-const MODEL = "gemini-2.5-flash";
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
 
@@ -14,58 +15,59 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function getErrorStatus(error: unknown) {
-  return (error as { status?: number })?.status;
-}
-
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isServiceUnavailable(error: unknown) {
-  const status = getErrorStatus(error);
-  if (status === 503) return true;
-
-  const message = getErrorMessage(error);
-  return (
-    message.includes("503") ||
-    message.includes("high demand") ||
-    message.includes("Service Unavailable")
-  );
-}
-
-function isQuotaExceeded(error: unknown) {
-  const status = getErrorStatus(error);
-  if (status === 429) return true;
-
-  const message = getErrorMessage(error);
-  return (
-    message.includes("429") ||
-    message.includes("quota") ||
-    message.includes("Quota exceeded") ||
-    message.includes("Too Many Requests")
-  );
-}
-
-async function generateDreamInterpretation(prompt: string) {
-  const model = genAI.getGenerativeModel({ model: MODEL });
+async function callGroq(messages: { role: string; content: string }[]): Promise<string> {
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      return await model.generateContent(prompt);
+      const res = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({ model: MODEL, messages, temperature: 0.8 }),
+      });
+
+      if (res.status === 429) {
+        if (attempt < MAX_RETRIES) {
+          await sleep(RETRY_DELAY_MS * (attempt + 1));
+          continue;
+        }
+        const err = new Error("Too Many Requests");
+        (err as { status?: number }).status = 429;
+        throw err;
+      }
+
+      if (res.status === 503) {
+        if (attempt < MAX_RETRIES) {
+          await sleep(RETRY_DELAY_MS * (attempt + 1));
+          continue;
+        }
+        const err = new Error("Service Unavailable");
+        (err as { status?: number }).status = 503;
+        throw err;
+      }
+
+      if (!res.ok) {
+        throw new Error(`Groq API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
     } catch (error) {
       lastError = error;
-
-      if (isQuotaExceeded(error)) {
-        throw error;
+      const msg = getErrorMessage(error);
+      if (msg.includes("429") || msg.includes("503")) {
+        if (attempt < MAX_RETRIES) {
+          await sleep(RETRY_DELAY_MS * (attempt + 1));
+          continue;
+        }
       }
-
-      if (isServiceUnavailable(error) && attempt < MAX_RETRIES) {
-        await sleep(RETRY_DELAY_MS * (attempt + 1));
-        continue;
-      }
-
       throw error;
     }
   }
@@ -75,106 +77,85 @@ async function generateDreamInterpretation(prompt: string) {
 
 export async function POST(request: Request) {
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      return Response.json(
-        { error: "API 키가 설정되지 않았습니다." },
-        { status: 500 }
-      );
+    if (!GROQ_API_KEY) {
+      return Response.json({ error: "API 키가 설정되지 않았습니다." }, { status: 500 });
     }
 
     const { dream } = await request.json();
 
     if (!dream || !dream.trim()) {
-      return Response.json(
-        { error: "꿈의 내용을 입력해주세요." },
-        { status: 400 }
-      );
+      return Response.json({ error: "꿈의 내용을 입력해주세요." }, { status: 400 });
     }
 
-    const prompt = `당신은 현대 심리학과 데이터 분석에 기반한 꿈 해몽 전문가입니다.
-사용자가 설명한 꿈을 분석하고 해당 풀이들을 미신처럼 해석을해서 무당처럼 말을 하되 따뜻하게, 사용자의 근 미래에 대한 운세를 포함해서 200~300자 분량의 다음 형식으로 응답해주세요.
-글의 맥락이 꿈의 내용이 아닌것 같을때는 풀이하지 말고 해몽을 못할것 같다고 말해줘.
+    const systemPrompt = `You are a Korean dream interpretation expert.
 
-반드시 아래 형식을 정확히 지켜서 응답해주세요:
+CRITICAL: Your entire response must be written in pure Korean Hangul (한글) only.
+Do NOT use Chinese characters, Japanese characters, or English in the response content.
 
-SUMMARY: 당신의 꿈은 ~~~입니다.
+Interpret the user's dream in a warm, mystical style like a Korean shaman (무당), incorporating modern psychological perspective and near-future fortune.
+If the input does not appear to be a dream, refuse interpretation.
 
-ANALYSIS:
-(3-4개의 단락으로 나눈 상세한 해석)
+Respond ONLY in the following JSON format. Do not include any text outside the JSON.
 
-GOOD: (해몽 풀이를 바탕으로 좋은 징조를 한 문장으로)
-BAD: (해몽 풀이를 바탕으로 조심해야 할 징조를 한 문장으로)
+{
+  "summary": "당신의 꿈은 ~~~입니다. (one-line summary, ~30 Korean characters)",
+  "analysis": "Detailed interpretation in 3-4 paragraphs separated by \\n\\n, total 200-300 Korean characters",
+  "goodElements": "One sentence about good elements from the dream in Korean",
+  "badElements": "One sentence about bad elements from the dream in Korean"
+}
 
-꿈: ${dream}`;
+If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis": "꿈의 내용이 아닌 것 같아 해몽을 드리기 어렵습니다.", "goodElements": "", "badElements": "" }`;
 
-    const result = await generateDreamInterpretation(prompt);
-    const responseText =
-      result.response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = await callGroq([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `꿈: ${dream}` },
+    ]);
 
-    if (!responseText) {
-      return Response.json(
-        { error: "응답 생성에 실패했습니다." },
-        { status: 500 }
-      );
+    let parsed: { summary: string; analysis: string; goodElements: string; badElements: string };
+    try {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch?.[0] || responseText);
+    } catch {
+      const lines = responseText.split("\n").filter((l) => l.trim());
+      parsed = {
+        summary: lines[0] || "",
+        analysis: lines.slice(1).join("\n"),
+        goodElements: "",
+        badElements: "",
+      };
+      console.log(parsed);
     }
-
-    const summaryMatch = responseText.match(/SUMMARY:\s*(.+)/);
-    const analysisMatch = responseText.match(/ANALYSIS:\s*([\s\S]*?)(?=GOOD:|BAD:|$)/);
-    const goodMatch = responseText.match(/GOOD:\s*(.+)/);
-    const badMatch = responseText.match(/BAD:\s*(.+)/);
-
-    const summary = summaryMatch?.[1]?.trim() || "";
-    const analysisText = analysisMatch?.[1]?.trim() || "";
-    const goodElements = goodMatch?.[1]?.trim() || undefined;
-    const badElements = badMatch?.[1]?.trim() || undefined;
 
     if (supabase) {
       const { error: insertError } = await supabase.from("data").insert([
-        {
-          description: "임시 꿈 해석 결과",
-          score: 72.5,
-        },
+        { description: "꿈 해석 결과", score: 0 },
       ]);
-
-      if (insertError) {
-        console.error("Supabase insert error:", insertError);
-      }
-    } else {
-      console.warn("Supabase env not configured, skipping insert.");
+      if (insertError) console.error("Supabase insert error:", insertError);
     }
 
     return Response.json({
-      summary,
-      analysis: analysisText,
-      goodElements,
-      badElements,
+      summary: parsed.summary,
+      analysis: parsed.analysis,
+      goodElements: parsed.goodElements || undefined,
+      badElements: parsed.badElements || undefined,
     });
   } catch (error) {
     console.error("Error:", error);
+    const msg = getErrorMessage(error);
 
-    if (isQuotaExceeded(error)) {
+    if (msg.includes("429") || msg.includes("Too Many Requests")) {
       return Response.json(
-        {
-          error:
-            "Gemini API 무료 사용 한도에 도달했습니다. 약 1분 후 다시 시도하거나, Google AI Studio에서 사용량·결제 설정을 확인해 주세요.",
-        },
+        { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
         { status: 429 }
       );
     }
-
-    if (isServiceUnavailable(error)) {
+    if (msg.includes("503") || msg.includes("Service Unavailable")) {
       return Response.json(
-        {
-          error:
-            "현재 해몽 서비스 이용자가 많아 잠시 후 다시 시도해 주세요.",
-        },
+        { error: "현재 해몽 서비스 이용자가 많아 잠시 후 다시 시도해 주세요." },
         { status: 503 }
       );
     }
 
-    return Response.json(
-      { error: "꿈 분석 중 오류가 발생했습니다." },
-      { status: 500 }
-    );
+    return Response.json({ error: "꿈 분석 중 오류가 발생했습니다." }, { status: 500 });
   }
 }
