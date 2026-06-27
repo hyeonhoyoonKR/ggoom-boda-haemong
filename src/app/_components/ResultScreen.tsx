@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import styles from "./ResultScreen.module.css";
-import StarBackground from "./StarBackground";
 
 interface Props {
   summary: string;
@@ -10,6 +9,7 @@ interface Props {
   goodElements?: string;
   badElements?: string;
   onReset: () => void;
+  moonSentinelRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function ResultScreen({
@@ -18,6 +18,7 @@ export default function ResultScreen({
   goodElements,
   badElements,
   onReset,
+  moonSentinelRef,
 }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
@@ -25,14 +26,24 @@ export default function ResultScreen({
     if (!captureRef.current) return;
     const html2canvas = (await import("html2canvas")).default;
     const el = captureRef.current;
-    const canvas = await html2canvas(el, {
-      backgroundColor: "#0d1b3e",
-      scale: 2,
-      width: el.offsetWidth,
-      height: el.offsetHeight,
-      x: 0,
-      y: 0,
-    });
+    // The sentinel moon is hidden on screen (MoonLayer draws the visible moon,
+    // but it lives outside captureRef so html2canvas can't see it). Reveal the
+    // sentinel replica only for the capture, then hide it again.
+    const sentinel = moonSentinelRef.current;
+    if (sentinel) sentinel.style.visibility = "visible";
+    let canvas;
+    try {
+      canvas = await html2canvas(el, {
+        backgroundColor: "#0d1b3e",
+        scale: 2,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+        x: 0,
+        y: 0,
+      });
+    } finally {
+      if (sentinel) sentinel.style.visibility = "";
+    }
     const link = document.createElement("a");
     link.download = "해몽결과.png";
     link.href = canvas.toDataURL("image/png");
@@ -41,9 +52,14 @@ export default function ResultScreen({
 
   return (
     <div className={styles.wrap}>
-      {/* <StarBackground /> */}
       <div className={styles.content}>
         <div ref={captureRef} className={styles.captureWrap}>
+          {/* Sentinel: positions MoonLayer moon + provides moon replica for download */}
+          <div ref={moonSentinelRef} className={styles.moonBlock}>
+            <div className={styles.moon}>
+              <div className={styles.moonCut} />
+            </div>
+          </div>
           <div className={styles.resultField}>
             <h3 className={styles.summary}>{summary}</h3>
             <div className={styles.analysis}>
