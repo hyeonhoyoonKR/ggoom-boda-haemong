@@ -150,13 +150,16 @@
 .actions {
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
   opacity: 0;
   animation: fadeIn 0.6s ease 2.3s forwards;
 }
 
-.resetBtn {
+.resetBtn,
+.feedbackBtn {
   margin-top: 0;
   padding: 14px 28px;
   border: 1px solid rgba(232, 213, 163, 0.3);
@@ -170,7 +173,8 @@
   font-family: 'GyeonggiMillenniumBackground', serif;
 }
 
-.downloadBtn {
+.downloadBtn,
+.copyBtn {
   width: 48px;
   height: 48px;
   border: 1px solid rgba(232, 213, 163, 0.3);
@@ -184,12 +188,14 @@
   transition: background 0.2s, border-color 0.2s;
 }
 
-.downloadBtn:hover {
+.downloadBtn:hover,
+.copyBtn:hover {
   background: rgba(232, 213, 163, 0.12);
   border-color: rgba(232, 213, 163, 0.5);
 }
 
-.resetBtn:hover {
+.resetBtn:hover,
+.feedbackBtn:hover {
   background: rgba(232, 213, 163, 0.12);
   border-color: rgba(232, 213, 163, 0.5);
   color: #e8d5a3;

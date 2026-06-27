@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import styles from "./ResultScreen.module.css";
 
 interface Props {
@@ -21,6 +21,30 @@ export default function ResultScreen({
   moonSentinelRef,
 }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const text = `${summary}\n\n${analysis}\n\n좋은요소: ${goodElements ?? ""}\n\n나쁜요소: ${badElements ?? ""}`;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for non-secure contexts (e.g. http://192.168.x.x on mobile)
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("복사 실패:", err);
+    }
+  };
 
   const handleDownload = async () => {
     if (!captureRef.current) return;
@@ -84,10 +108,52 @@ export default function ResultScreen({
           <button className={styles.resetBtn} onClick={onReset}>
             다시 입력하기
           </button>
+          {/* TODO: 의견 보내기 기능은 추후 구현 */}
+          <button className={styles.feedbackBtn} type="button">
+            의견 보내기
+          </button>
+          <button
+            className={styles.copyBtn}
+            type="button"
+            onClick={handleCopy}
+            aria-label="복사하기"
+          >
+            {copied ? (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M3 8.5l3.2 3.2L13 4.8"
+                  stroke="#e8d5a3"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect
+                  x="5.5"
+                  y="5.5"
+                  width="8"
+                  height="8"
+                  rx="1.5"
+                  stroke="#e8d5a3"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M3.3 10.5H3A1.5 1.5 0 0 1 1.5 9V3A1.5 1.5 0 0 1 3 1.5h6A1.5 1.5 0 0 1 10.5 3v.3"
+                  stroke="#e8d5a3"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </button>
           <button
             className={styles.downloadBtn}
             type="button"
             onClick={handleDownload}
+            aria-label="이미지 저장"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
