@@ -114,7 +114,15 @@ export default function IntroScreen({ onSubmit }: Props) {
           <div ref={moonParallaxRef} className={styles.moonParallax}>
             <div className={styles.moonBlock}>
               <div ref={moonRef} className={styles.moon}>
-                <div className={styles.moonCut} />
+                <svg width="52" height="52" viewBox="0 0 52 52" style={{display:"block"}}>
+                  <defs>
+                    <mask id="introMoonMask">
+                      <rect width="52" height="52" fill="white"/>
+                      <circle cx="30" cy="16" r="21" fill="black"/>
+                    </mask>
+                  </defs>
+                  <circle cx="26" cy="26" r="26" fill="#e8d5a3" mask="url(#introMoonMask)"/>
+                </svg>
               </div>
             </div>
           </div>

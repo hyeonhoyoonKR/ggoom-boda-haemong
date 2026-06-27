@@ -43,6 +43,9 @@ body {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  overflow: hidden;
+  overscroll-behavior: none;
+  height: 100%;
 }
 
 body {

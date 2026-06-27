@@ -42,19 +42,7 @@
 .moon {
   width: 52px;
   height: 52px;
-  background: #e8d5a3;
-  border-radius: 50%;
   position: relative;
-}
-
-.moonCut {
-  width: 42px;
-  height: 42px;
-  background: #0d1b3e;
-  border-radius: 50%;
-  position: absolute;
-  top: -5px;
-  left: 9px;
 }
 
 .title {

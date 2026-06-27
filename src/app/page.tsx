@@ -28,13 +28,18 @@ export default function Home() {
     setStage("loading");
 
     try {
-      // TODO: remove mock, restore API call
-      await new Promise(r => setTimeout(r, 1000));
+      const res = await fetch("/api/interpret-dream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dream }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "오류가 발생했습니다.");
       setResult({
-        summary: "물속을 헤엄치는 꿈은 무의식 속 감정의 흐름을 나타냅니다.",
-        analysis: "깊고 맑은 물은 내면의 평온함과 정서적 안정을 상징합니다. 자유롭게 헤엄치는 행위는 현재 처한 상황에서 유연하게 대처하고 있음을 의미하며, 억압된 감정보다는 자연스러운 흐름을 따르고 있다는 신호입니다. 물의 온도와 투명도, 주변 환경에 따라 해석이 달라질 수 있으며, 전반적으로 긍정적인 변화의 전조로 읽힙니다.",
-        goodElements: "맑은 물, 자유로운 움직임, 부드러운 물결",
-        badElements: "더러운 물, 열대 과일, 거친 수건",
+        summary: data.summary,
+        analysis: data.analysis,
+        goodElements: data.goodElements,
+        badElements: data.badElements,
       });
       setStage("result");
     } catch (err) {
@@ -53,7 +58,7 @@ export default function Home() {
 
   return (
     <>
-      <div style={{ position: "fixed", inset: 0, background: "#0d1b3e", zIndex: 0 }} />
+      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(135deg, #0a1628 0%, #122050 40%, #0d1f4a 65%, #091220 100%)", zIndex: 0 }} />
       <StarBackground />
       {stage === "intro" && <IntroScreen onSubmit={handleSubmit} />}
       {stage === "loading" && (

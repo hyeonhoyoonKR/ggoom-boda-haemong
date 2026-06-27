@@ -14,40 +14,10 @@
   justify-content: center;
 }
 
-/* 달 본체: 120x120 */
 .moon {
   width: 120px;
   height: 120px;
-  background: #e8d5a3;
-  border-radius: 50%;
   position: relative;
-}
-
-/*
-  moonCut: 96x96, top:-11, left:21
-  달 중심(60,60) 기준으로 moonCut 좌표계에서의 pivot:
-    x = 60 - 21 = 39px
-    y = 60 - (-11) = 71px
-  → transform-origin: 39px 71px
-*/
-.moonCut {
-  width: 96px;
-  height: 96px;
-  background: #0d1b3e;
-  border-radius: 50%;
-  position: absolute;
-  top: -11px;
-  left: 21px;
-  transform-origin: 39px 71px;
-}
-
-.orbiting {
-  animation: orbitMoon 3s linear infinite;
-}
-
-@keyframes orbitMoon {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
 }
 
 .hint {
