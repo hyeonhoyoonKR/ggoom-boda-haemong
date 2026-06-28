@@ -19,6 +19,9 @@
 **[✨ 지금 바로 해몽 받기 →](#)**
 
 </div>
+<div align="center">
+  <img width="800" height="483" align="center" alt="Project-GBH-Readme" src="https://github.com/user-attachments/assets/271beb89-c6e9-4962-a0c2-49035c37b32f" />
+</div>
 
 ---
 
