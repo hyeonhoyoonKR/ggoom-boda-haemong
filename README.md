@@ -16,13 +16,7 @@
 <br/>
 
 <!-- 배포 후 아래 URL을 실제 주소로 교체하세요 -->
-**[✨ 꿈 해몽 하기 →](https://ggoom-boda-haemong.vercel.app/)**
-
-<br/>
-
-<!-- 배포 후 스크린샷 또는 GIF로 교체하세요 -->
-<img width="800" height="483" alt="Project-GBH-Readme" src="https://github.com/user-attachments/assets/759dc721-2af4-48d4-bd58-5f28efba963a" />
-
+**[✨ 지금 바로 해몽 받기 →](#)**
 
 </div>
 
@@ -30,7 +24,7 @@
 
 <br/>
 
-## 🔮 프로젝트 소개
+## 🔮 어떤 서비스인가요?
 
 꿈을 꾸고 나서 그 의미가 궁금했던 적 있으신가요?
 
@@ -38,9 +32,19 @@
 
 <br/>
 
-## ⚙️ 개발 환경
+## ✨ 주요 기능
 
-**기술 스택**
+| 기능 | 설명 |
+|------|------|
+| 🤖 **AI 해몽** | 꿈 내용을 입력하면 AI가 깊이 있는 해석을 제공 |
+| 🌙 **달 애니메이션** | 화면 전환마다 달이 부드럽게 날아다니는 인터랙티브 UI |
+| ✨ **길몽 / 흉몽 판별** | 분석 결과에 따라 좋은 요소와 나쁜 요소를 구분해서 표시 |
+| 💬 **의견 보내기** | 별점과 한줄 의견으로 피드백 전송 가능 |
+| 🖼️ **결과 저장** | 해몽 결과를 이미지로 다운로드 또는 클립보드에 복사 |
+
+<br/>
+
+## 🛠 기술 스택
 
 ```
 Frontend   Next.js 16 (App Router) · React 19 · TypeScript
@@ -49,30 +53,29 @@ Database   Supabase (피드백 저장)
 Deploy     Vercel
 ```
 
-**협업 툴**
-
-```
-버전 관리   GitHub
-소통        Slack · Notion
-```
-
 <br/>
 
-## 📁 프로젝트 구조
+## 🚀 로컬 실행
 
+```bash
+# 패키지 설치
+npm install
+
+# 환경 변수 설정
+cp .env.example .env.local
 ```
-src/
-├── app/
-│   ├── _components/
-│   │   ├── IntroScreen       # 꿈 입력 화면
-│   │   ├── LoadingScreen     # 해몽 중 화면
-│   │   ├── ResultScreen      # 결과 화면
-│   │   ├── MoonLayer         # 달 애니메이션
-│   │   └── StarBackground    # 별 배경
-│   └── api/
-│       ├── interpret-dream/  # AI 해몽 엔드포인트
-│       └── feedback/         # 피드백 저장 엔드포인트
-└── ...
+
+`.env.local` 파일에 아래 값을 채워주세요:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+```
+
+```bash
+# 개발 서버 실행
+npm run dev
 ```
 
 <br/>
@@ -86,6 +89,26 @@ src/
 | 🔗 **결과 공유하기** | 해몽 결과를 클립보드에 복사해 간편하게 공유 |
 | 📸 **캡처 / 이미지 저장** | 해몽 결과를 이미지로 다운로드 |
 | 💬 **피드백** | 별점과 한줄 의견으로 서비스 피드백 전송 가능 |
+
+<br/>
+
+<br/>
+
+## 📁 프로젝트 구조
+
+```
+src/
+├── app/
+│   ├── _components/       # UI 컴포넌트
+│   │   ├── IntroScreen    # 꿈 입력 화면
+│   │   ├── LoadingScreen  # 해몽 중 화면
+│   │   ├── ResultScreen   # 결과 화면
+│   │   └── MoonLayer      # 달 애니메이션
+│   └── api/
+│       ├── interpret-dream/  # AI 해몽 엔드포인트
+│       └── feedback/         # 피드백 저장 엔드포인트
+└── ...
+```
 
 <br/>
 
