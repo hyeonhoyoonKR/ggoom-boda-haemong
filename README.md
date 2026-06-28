@@ -16,12 +16,13 @@
 <br/>
 
 <!-- 배포 후 아래 URL을 실제 주소로 교체하세요 -->
-**[✨ 지금 바로 해몽 받기 →](#)**
+**[✨ 꿈 해몽 하기 →](https://ggoom-boda-haemong.vercel.app/)**
 
 <br/>
 
 <!-- 배포 후 스크린샷 또는 GIF로 교체하세요 -->
-![screenshot](#)
+<img width="800" height="483" alt="Project-GBH-Readme" src="https://github.com/user-attachments/assets/759dc721-2af4-48d4-bd58-5f28efba963a" />
+
 
 </div>
 
