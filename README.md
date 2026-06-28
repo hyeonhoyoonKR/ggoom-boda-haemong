@@ -1,39 +1,109 @@
-# 꿈 보다 해몽
+<div align="center">
 
-AI가 당신의 꿈을 해석해드립니다. 꿈 내용을 입력하면 현대 심리학과 데이터 기반 분석을 결합해 숨겨진 의미를 풀어냅니다.
+# 🌙 꿈 보다 해몽
 
-## 주요 기능
+**당신의 꿈 속에 숨겨진 의미를 AI가 읽어드립니다**
 
-- **AI 해몽** — Google Gemini API를 사용한 꿈 분석
-- **길몽 / 흉몽 판별** — 분석 결과에 따라 부적 이미지가 달라집니다
-- **애니메이션 부적함** — 결과를 부적함을 열어 확인하는 인터랙티브 UI
+*현대 심리학과 데이터 기반 해석을 결합한 AI 해몽 서비스*
 
-## 시작하기
+<br/>
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
+![Vercel](https://img.shields.io/badge/Vercel-Deploy-000000?style=for-the-badge&logo=vercel)
+
+<br/>
+
+<!-- 배포 후 아래 URL을 실제 주소로 교체하세요 -->
+**[✨ 지금 바로 해몽 받기 →](#)**
+
+</div>
+
+---
+
+<br/>
+
+## 🔮 어떤 서비스인가요?
+
+꿈을 꾸고 나서 그 의미가 궁금했던 적 있으신가요?
+
+**꿈 보다 해몽**은 꿈 내용을 입력하면 AI가 한국 전통 해몽 방식과 현대 심리학을 결합해 숨겨진 의미를 풀어드리는 서비스입니다. 결과는 신비로운 **부적함**을 열어 확인하는 독특한 UI로 전달됩니다.
+
+<br/>
+
+## ✨ 주요 기능
+
+| 기능 | 설명 |
+|------|------|
+| 🤖 **AI 해몽** | 꿈 내용을 입력하면 AI가 깊이 있는 해석을 제공 |
+| ☀️ **길몽 / 흉몽 판별** | 분석 결과에 따라 부적 이미지가 자동으로 달라짐 |
+| 📦 **애니메이션 부적함** | 결과를 부적함을 직접 열어 확인하는 인터랙티브 경험 |
+| 💬 **의견 보내기** | 별점과 한줄 의견으로 피드백 전송 가능 |
+| 🖼️ **결과 저장** | 해몽 결과를 이미지로 다운로드 또는 클립보드에 복사 |
+
+<br/>
+
+## 🛠 기술 스택
+
+```
+Frontend   Next.js 16 (App Router) · React 19 · TypeScript
+AI         Groq API (LLM 추론)
+Database   Supabase (피드백 저장)
+Deploy     Vercel
+```
+
+<br/>
+
+## 🚀 로컬 실행
 
 ```bash
+# 패키지 설치
 npm install
+
+# 환경 변수 설정
+cp .env.example .env.local
 ```
 
-환경 변수 설정 (`.env.local` 파일 생성):
+`.env.local` 파일에 아래 값을 채워주세요:
 
+```env
+GROQ_API_KEY=your_groq_api_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
 ```
-GEMINI_API_KEY=your_api_key_here
-```
-
-개발 서버 실행:
 
 ```bash
+# 개발 서버 실행
 npm run dev
 ```
 
 [http://localhost:3000](http://localhost:3000)에서 확인하세요.
 
-## 기술 스택
+<br/>
 
-- [Next.js 16](https://nextjs.org) (App Router)
-- [Google Gemini API](https://ai.google.dev) — 꿈 해석 AI
-- TypeScript / React 19
+## 📁 프로젝트 구조
 
-## 배포
+```
+src/
+├── app/
+│   ├── _components/       # UI 컴포넌트
+│   │   ├── IntroScreen    # 꿈 입력 화면
+│   │   ├── LoadingScreen  # 해몽 중 화면
+│   │   ├── ResultScreen   # 결과 화면
+│   │   └── MoonLayer      # 달 애니메이션
+│   └── api/
+│       ├── interpret-dream/  # AI 해몽 엔드포인트
+│       └── feedback/         # 피드백 저장 엔드포인트
+└── ...
+```
 
-[Vercel](https://vercel.com)을 사용하면 가장 쉽게 배포할 수 있습니다.
+<br/>
+
+---
+
+<div align="center">
+
+*🌙 좋은 꿈 꾸세요 🌙*
+
+</div>
