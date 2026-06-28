@@ -16,7 +16,7 @@
 <br/>
 
 <!-- 배포 후 아래 URL을 실제 주소로 교체하세요 -->
-**[✨ 지금 바로 해몽 받기 →](#)**
+**[✨ 지금 바로 해몽 받기 →](https://ggoom-boda-haemong.vercel.app/)**
 
 </div>
 <div align="center">
