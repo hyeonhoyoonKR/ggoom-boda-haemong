@@ -16,8 +16,11 @@
 <br/>
 
 <!-- 배포 후 아래 URL을 실제 주소로 교체하세요 -->
-**[✨ 지금 바로 해몽 받기 →](#)**
+**[✨ 지금 바로 해몽 받기 →](https://ggoom-boda-haemong.vercel.app/)**
 
+</div>
+<div align="center">
+  <img width="800" height="483" align="center" alt="Project-GBH-Readme" src="https://github.com/user-attachments/assets/271beb89-c6e9-4962-a0c2-49035c37b32f" />
 </div>
 
 ---
@@ -78,7 +81,19 @@ SUPABASE_KEY=your_supabase_anon_key
 npm run dev
 ```
 
-[http://localhost:3000](http://localhost:3000)에서 확인하세요.
+<br/>
+
+## ✨ 주요 기능
+
+| 기능 | 설명 |
+|------|------|
+| 🤖 **AI 해몽** | 꿈 내용을 입력하면 AI가 깊이 있는 해석을 제공 |
+| ☀️ **길몽 / 흉몽 판별** | 분석 결과에 따라 좋은 요소와 나쁜 요소를 구분해서 표시 |
+| 🔗 **결과 공유하기** | 해몽 결과를 클립보드에 복사해 간편하게 공유 |
+| 📸 **캡처 / 이미지 저장** | 해몽 결과를 이미지로 다운로드 |
+| 💬 **피드백** | 별점과 한줄 의견으로 서비스 피드백 전송 가능 |
+
+<br/>
 
 <br/>
 
