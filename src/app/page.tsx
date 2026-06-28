@@ -11,7 +11,7 @@ type Stage = "intro" | "loading" | "result";
 
 type Result = {
   summary: string;
-  analysis: string;
+  analysis: Array<{ title: string; content: string }>;
   goodElements?: string;
   badElements?: string;
 };

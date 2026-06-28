@@ -5,7 +5,7 @@ import styles from "./ResultScreen.module.css";
 
 interface Props {
   summary: string;
-  analysis: string;
+  analysis: Array<{ title: string; content: string }>;
   goodElements?: string;
   badElements?: string;
   onReset: () => void;
@@ -31,7 +31,8 @@ export default function ResultScreen({
   const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const handleCopy = async () => {
-    const text = `${summary}\n\n${analysis}\n\n좋은요소: ${goodElements ?? ""}\n\n나쁜요소: ${badElements ?? ""}`;
+    const analysisText = analysis.map(p => `${p.title}\n${p.content}`).join("\n\n");
+    const text = `${summary}\n\n${analysisText}\n\n좋은요소: ${goodElements ?? ""}\n\n나쁜요소: ${badElements ?? ""}`;
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
@@ -176,9 +177,12 @@ export default function ResultScreen({
           <div className={styles.resultField}>
             <h3 className={styles.summary}>{summary}</h3>
             <div className={styles.analysis}>
-              {analysis
-                .split("\n\n")
-                .map((para, i) => para.trim() && <p key={i}>{para.trim()}</p>)}
+              {analysis.map((para, i) => (
+                <div key={i} className={styles.paragraph}>
+                  {para.title && <p className={styles.paragraphTitle}>{para.title}</p>}
+                  <p className={styles.paragraphContent}>{para.content}</p>
+                </div>
+              ))}
             </div>
           </div>
           <div className={styles.elementsRow}>

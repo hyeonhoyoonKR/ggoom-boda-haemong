@@ -6,4 +6,4 @@ const ip =
     .flat()
     .find((i) => i?.family === "IPv4" && !i.internal)?.address ?? "0.0.0.0";
 
-spawn("next", ["dev", "-H", ip], { stdio: "inherit", shell: true });
+spawn("next", ["dev", "-H", "0.0.0.0"], { stdio: "inherit", shell: true });

@@ -101,7 +101,22 @@
   display: none;
 }
 
-.analysis p {
+.paragraph {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.paragraphTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #e8d5a3;
+  font-family: 'JeongseonArirangHon', serif;
+  letter-spacing: 0.05em;
+}
+
+.paragraphContent {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.85;

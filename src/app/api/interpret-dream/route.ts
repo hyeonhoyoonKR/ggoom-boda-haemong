@@ -92,8 +92,14 @@ export async function POST(request: Request) {
 CRITICAL: Your entire response must be written in pure Korean Hangul (한글) only.
 Do NOT use Chinese characters, Japanese characters, or English in the response content.
 
-Interpret the user's dream in a warm, mystical style like a Korean shaman (무당), incorporating modern psychological perspective and near-future fortune.
+Interpret the user's dream in a warm, mystical style like a Korean shaman (무당) with deep knowledge of traditional Korean shamanic dream lore (무속 해몽) and modern psychology.
+Each element of the dream (people, objects, places, actions, emotions, colors) must be individually analyzed.
+Connect the symbolic meaning to the dreamer's near-future fortune and inner psychological state.
 If the input does not appear to be a dream, refuse interpretation.
+
+LANGUAGE STYLE: Use plain, everyday Korean that anyone can understand without a dictionary.
+Avoid formal academic terms, rare Sino-Korean words (한자어), or literary expressions.
+If a concept is complex, explain it simply in conversational language as if speaking directly to the dreamer.
 
 All sentences must end with "~입니다" or "~합니다" style (formal Korean ending).
 
@@ -101,9 +107,10 @@ Respond ONLY in the following JSON format. Do not include any text outside the J
 
 {
   "summary": "One-line interpretation summary in Korean (~30 characters). Do NOT repeat or paraphrase the user's input. Write the core meaning or message of the dream instead. End with ~입니다.",
-  "analysis": "Detailed interpretation in 3-4 paragraphs separated by \\n\\n, total 200-300 Korean characters. All sentences end with ~입니다/~합니다.",
-  "goodElements": "One sentence about fortunate elements from the dream. End with ~입니다.",
-  "badElements": "One sentence about unfortunate elements from the dream. End with ~입니다."
+  "analysis": [{"title": "소제목 (3-6 Korean characters)", "content": "단락 내용 (60-90 Korean characters, all sentences end with ~입니다/~합니다)"}, ...],
+Each analysis array must have 5-6 items. First item: overall symbolic meaning. Middle items: each key element (person/object/action/emotion) individually with traditional and psychological meaning. Last item: near-future fortune and advice.
+  "goodElements": "2-3 sentences about fortunate elements and what they specifically signify for the dreamer's future. End with ~입니다.",
+  "badElements": "2-3 sentences about cautionary elements and what the dreamer should be mindful of. End with ~입니다."
 }
 
 If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis": "꿈의 내용이 아닌 것 같아 해몽을 드리기 어렵습니다.", "goodElements": "", "badElements": "" }`;
@@ -113,7 +120,7 @@ If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis"
       { role: "user", content: `꿈: ${dream}` },
     ]);
 
-    let parsed: { summary: string; analysis: string; goodElements: string; badElements: string };
+    let parsed: { summary: string; analysis: Array<{title: string; content: string}>; goodElements: string; badElements: string };
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       parsed = JSON.parse(jsonMatch?.[0] || responseText);
@@ -121,7 +128,7 @@ If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis"
       const lines = responseText.split("\n").filter((l) => l.trim());
       parsed = {
         summary: lines[0] || "",
-        analysis: lines.slice(1).join("\n"),
+        analysis: [{ title: "", content: lines.slice(1).join("\n") }],
         goodElements: "",
         badElements: "",
       };
