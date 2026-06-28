@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "꿈 해몽",
+  title: "꿈보다 해몽",
   description: "당신의 꿈을 해석해드립니다",
   icons: { icon: '/favicon.svg' },
   openGraph: {
-    title: '꿈해몽',
+    title: '꿈보다 해몽',
     description: '당신의 꿈을 해석해드립니다',
     images: [
       {
