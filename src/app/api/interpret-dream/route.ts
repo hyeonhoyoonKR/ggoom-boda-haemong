@@ -92,58 +92,89 @@ export async function POST(request: Request) {
 CRITICAL: Your entire response must be written in pure Korean Hangul (한글) only.
 Do NOT use Chinese characters, Japanese characters, or English in the response content.
 
-Interpret the user's dream in a warm, mystical style like a Korean shaman (무당) with deep knowledge of traditional Korean shamanic dream lore (무속 해몽) and modern psychology.
-Each element of the dream (people, objects, places, actions, emotions, colors) must be individually analyzed.
-Connect the symbolic meaning to the dreamer's near-future fortune and inner psychological state.
+Interpret the user's dream by focusing only on what actually appears in the dream.
+Do NOT invent or assume elements that are not in the dream description.
+Connect the symbols, emotions, and actions in the dream to the dreamer's psychological state and near-future fortune.
 If the input does not appear to be a dream, refuse interpretation.
 
 LANGUAGE STYLE: Use plain, everyday Korean that anyone can understand without a dictionary.
 Avoid formal academic terms, rare Sino-Korean words (한자어), or literary expressions.
-If a concept is complex, explain it simply in conversational language as if speaking directly to the dreamer.
+Write conversationally, as if speaking warmly and directly to the dreamer.
 
 All sentences must end with "~입니다" or "~합니다" style (formal Korean ending).
+
+For important keywords that carry symbolic meaning, wrap them with ** like **단어** so they appear bold.
 
 Respond ONLY in the following JSON format. Do not include any text outside the JSON.
 
 {
-  "summary": "One-line interpretation summary in Korean (~30 characters). Do NOT repeat or paraphrase the user's input. Write the core meaning or message of the dream instead. End with ~입니다.",
-  "analysis": [{"title": "소제목 (3-6 Korean characters)", "content": "단락 내용 (60-90 Korean characters, all sentences end with ~입니다/~합니다)"}, ...],
-Each analysis array must have 5-6 items. First item: overall symbolic meaning. Middle items: each key element (person/object/action/emotion) individually with traditional and psychological meaning. Last item: near-future fortune and advice.
-  "goodElements": "2-3 sentences about fortunate elements and what they specifically signify for the dreamer's future. End with ~입니다.",
-  "badElements": "2-3 sentences about cautionary elements and what the dreamer should be mindful of. End with ~입니다."
+  "summary": "Start with '길몽' or '흉몽' or '평몽', then one-line core meaning (~25 Korean characters). Do NOT repeat the user's input. End with ~입니다.",
+  "analysis": ["단락 내용 (50-80 Korean characters). Bold key symbols with **단어**. All sentences end with ~입니다/합니다.", ...],
+  5-6 string items. Each paragraph naturally interprets the most meaningful aspect of THIS specific dream — choose what matters most (a key object, emotion, action, person, or overall theme). Do not force fixed categories. Last paragraph: near-future outlook and advice.
+  "goodElements": "2-3 sentences about specific fortunate signs in this dream and what they mean for the dreamer. Bold key words. End with ~입니다.",
+  "badElements": "2-3 sentences about specific cautionary signs and what to be mindful of. Bold key words. End with ~입니다."
 }
 
-If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis": "꿈의 내용이 아닌 것 같아 해몽을 드리기 어렵습니다.", "goodElements": "", "badElements": "" }`;
+If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis": ["꿈의 내용이 아닌 것 같아 해몽을 드리기 어렵습니다."], "goodElements": "", "badElements": "" }`;
 
-    const responseText = await callGroq([
+    const messages = [
       { role: "system", content: systemPrompt },
       { role: "user", content: `꿈: ${dream}` },
-    ]);
+    ];
 
-    let parsed: { summary: string; analysis: unknown; goodElements: string; badElements: string };
-    try {
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch?.[0] || responseText);
-    } catch {
-      const lines = responseText.split("\n").filter((l) => l.trim());
-      parsed = {
-        summary: lines[0] || "",
-        analysis: [{ title: "", content: lines.slice(1).join("\n") }],
-        goodElements: "",
-        badElements: "",
-      };
-      console.log(parsed);
-    }
-
-    // Normalize analysis to always be an array regardless of what the model returns
-    const normalizeAnalysis = (raw: unknown): Array<{ title: string; content: string }> => {
-      if (Array.isArray(raw)) return raw;
+    const normalizeAnalysis = (raw: unknown): string[] => {
+      if (Array.isArray(raw)) {
+        return raw
+          .map(item => (typeof item === "string" ? item : item?.content ?? ""))
+          .map(s => s.trim())
+          .filter(s => s.length > 0);
+      }
       if (typeof raw === "string") {
-        return raw.split("\n\n").filter(s => s.trim()).map(content => ({ title: "", content: content.trim() }));
+        return raw.split("\n\n").map(s => s.trim()).filter(s => s.length > 0);
       }
       return [];
     };
-    const analysis = normalizeAnalysis(parsed.analysis);
+
+    const parseResponse = (responseText: string) => {
+      let parsed: { summary: string; analysis: unknown; goodElements: string; badElements: string };
+      try {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        parsed = JSON.parse(jsonMatch?.[0] || responseText);
+      } catch {
+        const lines = responseText.split("\n").filter((l) => l.trim());
+        parsed = {
+          summary: lines[0] || "",
+          analysis: lines.slice(1),
+          goodElements: "",
+          badElements: "",
+        };
+      }
+      return {
+        summary: parsed.summary || "",
+        analysis: normalizeAnalysis(parsed.analysis),
+        goodElements: parsed.goodElements || "",
+        badElements: parsed.badElements || "",
+      };
+    };
+
+    let summary = "";
+    let analysis: string[] = [];
+    let goodElements = "";
+    let badElements = "";
+
+    for (let attempt = 0; attempt <= 1; attempt++) {
+      const responseText = await callGroq(messages);
+      const result = parseResponse(responseText);
+      summary = result.summary;
+      analysis = result.analysis;
+      goodElements = result.goodElements;
+      badElements = result.badElements;
+      if (summary.trim() && analysis.length > 0) break;
+    }
+
+    if (!summary.trim() || analysis.length === 0) {
+      return Response.json({ error: "해몽 결과를 생성하지 못했습니다. 다시 시도해 주세요." }, { status: 500 });
+    }
 
     if (supabase) {
       const { error: insertError } = await supabase.from("data").insert([
@@ -153,10 +184,10 @@ If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis"
     }
 
     return Response.json({
-      summary: parsed.summary,
+      summary,
       analysis,
-      goodElements: parsed.goodElements || undefined,
-      badElements: parsed.badElements || undefined,
+      goodElements: goodElements || undefined,
+      badElements: badElements || undefined,
     });
   } catch (error) {
     console.error("Error:", error);

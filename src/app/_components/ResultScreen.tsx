@@ -5,7 +5,7 @@ import styles from "./ResultScreen.module.css";
 
 interface Props {
   summary: string;
-  analysis: Array<{ title: string; content: string }>;
+  analysis: string[];
   goodElements?: string;
   badElements?: string;
   onReset: () => void;
@@ -30,8 +30,13 @@ export default function ResultScreen({
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
 
+  const parseBold = (text: string): React.ReactNode[] =>
+    text.split(/\*\*(.+?)\*\*/g).map((part, i) =>
+      i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+    );
+
   const handleCopy = async () => {
-    const analysisText = analysis.map(p => `${p.title}\n${p.content}`).join("\n\n");
+    const analysisText = analysis.map(p => p.replace(/\*\*/g, "")).join("\n\n");
     const text = `${summary}\n\n${analysisText}\n\n좋은요소: ${goodElements ?? ""}\n\n나쁜요소: ${badElements ?? ""}`;
     try {
       if (navigator.clipboard && window.isSecureContext) {
@@ -178,10 +183,7 @@ export default function ResultScreen({
             <h3 className={styles.summary}>{summary}</h3>
             <div className={styles.analysis}>
               {analysis.map((para, i) => (
-                <div key={i} className={styles.paragraph}>
-                  {para.title && <p className={styles.paragraphTitle}>{para.title}</p>}
-                  <p className={styles.paragraphContent}>{para.content}</p>
-                </div>
+                <p key={i} className={styles.paragraphContent}>{parseBold(para)}</p>
               ))}
             </div>
           </div>
