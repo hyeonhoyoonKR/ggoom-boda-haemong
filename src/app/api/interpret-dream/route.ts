@@ -120,7 +120,7 @@ If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis"
       { role: "user", content: `꿈: ${dream}` },
     ]);
 
-    let parsed: { summary: string; analysis: Array<{title: string; content: string}>; goodElements: string; badElements: string };
+    let parsed: { summary: string; analysis: unknown; goodElements: string; badElements: string };
     try {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       parsed = JSON.parse(jsonMatch?.[0] || responseText);
@@ -135,6 +135,16 @@ If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis"
       console.log(parsed);
     }
 
+    // Normalize analysis to always be an array regardless of what the model returns
+    const normalizeAnalysis = (raw: unknown): Array<{ title: string; content: string }> => {
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === "string") {
+        return raw.split("\n\n").filter(s => s.trim()).map(content => ({ title: "", content: content.trim() }));
+      }
+      return [];
+    };
+    const analysis = normalizeAnalysis(parsed.analysis);
+
     if (supabase) {
       const { error: insertError } = await supabase.from("data").insert([
         { description: "꿈 해석 결과", score: 0 },
@@ -144,7 +154,7 @@ If not a dream: { "summary": "해몽할 수 없는 내용입니다.", "analysis"
 
     return Response.json({
       summary: parsed.summary,
-      analysis: parsed.analysis,
+      analysis,
       goodElements: parsed.goodElements || undefined,
       badElements: parsed.badElements || undefined,
     });
