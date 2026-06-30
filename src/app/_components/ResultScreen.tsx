@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import styles from "./ResultScreen.module.css";
 
 interface Props {
@@ -21,7 +21,20 @@ export default function ResultScreen({
   moonSentinelRef,
 }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
+  const analysisRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+
+  useEffect(() => {
+    const el = analysisRef.current;
+    if (!el) return;
+    const check = () => setHasMore(el.scrollHeight > el.clientHeight && el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+    check();
+    el.addEventListener("scroll", check);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", check); ro.disconnect(); };
+  }, [analysis]);
 
   const [showFeedback, setShowFeedback] = useState(false);
   const [rating, setRating] = useState(0);
@@ -181,20 +194,21 @@ export default function ResultScreen({
           </div>
           <div className={styles.resultField}>
             <h3 className={styles.summary}>{summary}</h3>
-            <div className={styles.analysis}>
+            <div ref={analysisRef} className={styles.analysis}>
               {analysis.map((para, i) => (
                 <p key={i} className={styles.paragraphContent}>{parseBold(para)}</p>
               ))}
             </div>
+            {hasMore && <div className={styles.scrollFade} />}
           </div>
           <div className={styles.elementsRow}>
             <div className={styles.goodField}>
               <span className={styles.fieldLabel}>좋은요소</span>
-              <p className={styles.fieldText}>{goodElements || "—"}</p>
+              <p className={styles.fieldText}>{goodElements ? parseBold(goodElements) : "—"}</p>
             </div>
             <div className={styles.badField}>
               <span className={styles.fieldLabel}>나쁜요소</span>
-              <p className={styles.fieldText}>{badElements || "—"}</p>
+              <p className={styles.fieldText}>{badElements ? parseBold(badElements) : "—"}</p>
             </div>
           </div>
         </div>
