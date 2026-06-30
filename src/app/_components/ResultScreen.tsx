@@ -190,11 +190,11 @@ export default function ResultScreen({
           <div className={styles.elementsRow}>
             <div className={styles.goodField}>
               <span className={styles.fieldLabel}>좋은요소</span>
-              <p className={styles.fieldText}>{goodElements || "—"}</p>
+              <p className={styles.fieldText}>{goodElements ? parseBold(goodElements) : "—"}</p>
             </div>
             <div className={styles.badField}>
               <span className={styles.fieldLabel}>나쁜요소</span>
-              <p className={styles.fieldText}>{badElements || "—"}</p>
+              <p className={styles.fieldText}>{badElements ? parseBold(badElements) : "—"}</p>
             </div>
           </div>
         </div>
