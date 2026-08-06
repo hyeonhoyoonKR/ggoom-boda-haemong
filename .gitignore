@@ -46,3 +46,4 @@ hf-space-bge-m3/
 # RAGAS eval
 eval/.venv/
 eval/results.csv
+eval/__pycache__/
